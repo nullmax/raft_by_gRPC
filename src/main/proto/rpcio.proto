@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.ele.io";
+option java_outer_classname = "ClientProto";
+option objc_class_prefix = "CLT";
+
+package io;
+
+service RpcIO {
+    // Client向Server发送DELETE或SET请求
+    rpc Command (ClientRequest) returns (ServerReply) {
+    }
+
+    // Client向Server发送GET请求
+    rpc Query (ClientRequest) returns (stream ResultUnit) {
+    }
+}
+
+message ClientRequest {
+    string command = 1;
+    int32 commandId = 2;
+}
+
+message ServerReply {
+    bool success = 1;
+    bool redirect = 2;
+    int32 redirectPort = 3;
+}
+
+message ResultUnit {
+    string content = 1;
+}
