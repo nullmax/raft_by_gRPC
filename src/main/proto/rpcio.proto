@@ -26,6 +26,7 @@ message ServerReply {
     bool success = 1;
     bool redirect = 2;
     int32 redirectPort = 3;
+    string redirectAddress = 4;
 }
 
 message ResultUnit {

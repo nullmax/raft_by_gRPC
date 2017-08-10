@@ -27,6 +27,10 @@ public class CommonClient {
         blockingStub = RpcIOGrpc.newBlockingStub(channel);
     }
 
+    public void setCommandId(int i) {
+        commandId = i;
+    }
+
     private synchronized int increaseCommandId() {
         return commandId++;
     }
@@ -38,13 +42,13 @@ public class CommonClient {
                 .build());
     }
 
-    private void setChannel(int port) {
+    private void setChannel(String address, int port) {
         channel = ManagedChannelBuilder
-                .forAddress("localhost", port)
+                .forAddress(address, port)
                 .usePlaintext(true)
                 .build();
         blockingStub = RpcIOGrpc.newBlockingStub(channel);
-        logger.info("redirect to port:" + port);
+        logger.info("redirect to:" + address + ":" + port);
     }
 
     public void shutdown() throws InterruptedException {
@@ -67,7 +71,7 @@ public class CommonClient {
                 return;
             }
             if (response.getRedirect()) {
-                setChannel(response.getRedirectPort());
+                setChannel(response.getRedirectAddress(), response.getRedirectPort());
             }
         } while (!response.getSuccess());
         logger.info("Result from server: success");

@@ -10,6 +10,7 @@ import com.ele.util.Log;
 import com.ele.util.LogEntry;
 import io.grpc.*;
 import io.grpc.stub.StreamObserver;
+import org.omg.Messaging.SYNC_WITH_TRANSPORT;
 
 import java.io.IOException;
 import java.util.*;
@@ -98,7 +99,7 @@ public class RaftServer {
         syncLogTask = new SyncLogTask();
         timer.schedule(syncLogTask, 0, 150);
         //todo 自己下台
-//        timer.schedule(new SelfStepDown(), 30000);   //30秒后自己下台
+//        timer.schedule(new SelfStepDown(), 20000);   //20秒后自己下台
     }
 
     private synchronized void resetTimeout() {
@@ -226,6 +227,7 @@ public class RaftServer {
                 }
             } else {
                 if (response.getStepDown()) {
+                    System.out.println("I am out by rec app reply!");
                     status = FOLLOWER;
                     syncLogTask.cancel();   //Leader下台
                     currentTerm = response.getTerm();   //更新term
@@ -291,6 +293,24 @@ public class RaftServer {
 
             VoteReply.Builder builder = VoteReply.newBuilder();
             if (request.getTerm() >= currentTerm) {
+<<<<<<< HEAD
+                if (votedFor == -1 || votedFor == request.getCandidateId()) {
+                    if (request.getTerm() > logs.getLastTerm(logs.getLastIndex())
+                            || request.getLatLogTerm() == logs.getLastTerm(logs.getLastIndex()) && request.getLastLogIndex() >= logs.getLastIndex()) {
+                        if (request.getLastLogIndex() > logs.getLastIndex() && status == LEADER) {
+                            status = FOLLOWER;
+                            System.out.println("I am out by rec vote!");
+                            syncLogTask.cancel();   //Leader下台
+                        }
+                        currentTerm = request.getTerm();    //更新term
+                        resetTimeout(); //重置选举计时器
+                        votedFor = request.getCandidateId();
+                        builder.setVoteGranted(true);
+                    } else {
+                        builder.setVoteGranted(false);
+                    }
+                } else
+=======
                 if (request.getTerm() > logs.getLastTerm(logs.getLastIndex())
                         || request.getLatLogTerm() == logs.getLastTerm(logs.getLastIndex()) && request.getLastLogIndex() >= logs.getLastIndex()) {
                     if (status == LEADER) {
@@ -302,8 +322,8 @@ public class RaftServer {
                     votedFor = request.getCandidateId();
                     builder.setVoteGranted(true);
                 } else {
+>>>>>>> 8518d15d780dfe8d92aff9bb5224dd1f1d6a1bcc
                     builder.setVoteGranted(false);
-                }
             } else {
                 builder.setVoteGranted(false);
             }
@@ -321,6 +341,7 @@ public class RaftServer {
             if (request.getTerm() > currentTerm) {
                 if (status == LEADER) {
                     status = FOLLOWER;
+                    System.out.println("I am out by rec append!");
                     syncLogTask.cancel();   //Leader下台
                 }
                 currentTerm = request.getTerm();
@@ -349,11 +370,8 @@ public class RaftServer {
                     builder.setSuccess(false);
                     builder.setStepDown(true);
                 } else {
-                    if (status == LEADER) {
-                        status = FOLLOWER;
-                        syncLogTask.cancel();
-                    }
                     resetTimeout();
+                    votedFor = -1;  //reset voteFor
                     leaderId = request.getLeaderId();
                     //拷贝日志
                     if (getLogs(request.getPrevLogIndex(), request.getPrevLogTerm(), request.getGetEntries())) {
@@ -415,7 +433,6 @@ public class RaftServer {
         @Override
         public void command(ClientRequest request,
                             StreamObserver<ServerReply> responseObserver) {
-            logger.info("The command of Client:" + request.getCommand());
             ServerReply.Builder builder = ServerReply.newBuilder();
             if (serverId != leaderId) {
                 builder.setSuccess(false);
@@ -423,11 +440,21 @@ public class RaftServer {
                 builder.setRedirectAddress(addressList.get(leaderId));
                 builder.setRedirectPort(portList.get(leaderId));
             } else {
+<<<<<<< HEAD
+                logger.info("The command of Client:" + request.getCommand());
+=======
+>>>>>>> 8518d15d780dfe8d92aff9bb5224dd1f1d6a1bcc
                 if (logs.checkAppliedBefore(request.getCommandId()))
                     builder.setSuccess(true);
                 else {
                     logs.addLogEntry(currentTerm, request.getCommand(), request.getCommandId());
+<<<<<<< HEAD
+
                     waitForFollower(request.getCommandId());
+
+=======
+                    waitForFollower(request.getCommandId());
+>>>>>>> 8518d15d780dfe8d92aff9bb5224dd1f1d6a1bcc
                     if (DBConnector.update(request.getCommand())) {
                         ++logs.commitIndex;
                         //todo apply after committed;
@@ -493,8 +520,9 @@ public class RaftServer {
     class SyncLogTask extends TimerTask {
         @Override
         public boolean cancel() {
+            status = FOLLOWER;
             voteCount = 0;
-            votedFor = 0;
+            votedFor = -1;
             logger.info("Server" + serverId + " now step out");
             return super.cancel();
         }
@@ -522,7 +550,7 @@ public class RaftServer {
         public void run() {
             if (leaderId != serverId) {
                 voteCount = 0;
-                votedFor = 0;
+                votedFor = -1;
                 status = FOLLOWER;
                 resetTimeout();
             }
@@ -532,7 +560,6 @@ public class RaftServer {
     class SelfStepDown extends TimerTask {
         @Override
         public void run() {
-            System.out.println("go down");
             status = FOLLOWER;
             syncLogTask.cancel();
         }

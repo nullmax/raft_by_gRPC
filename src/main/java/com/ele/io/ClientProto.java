@@ -39,14 +39,14 @@ public final class ClientProto {
   static {
     java.lang.String[] descriptorData = {
       "\n\013rpcio.proto\022\002io\"3\n\rClientRequest\022\017\n\007co" +
-      "mmand\030\001 \001(\t\022\021\n\tcommandId\030\002 \001(\005\"F\n\013Server" +
+      "mmand\030\001 \001(\t\022\021\n\tcommandId\030\002 \001(\005\"_\n\013Server" +
       "Reply\022\017\n\007success\030\001 \001(\010\022\020\n\010redirect\030\002 \001(\010" +
-      "\022\024\n\014redirectPort\030\003 \001(\005\"\035\n\nResultUnit\022\017\n\007" +
-      "content\030\001 \001(\t2h\n\005RpcIO\022/\n\007Command\022\021.io.C" +
-      "lientRequest\032\017.io.ServerReply\"\000\022.\n\005Query" +
-      "\022\021.io.ClientRequest\032\016.io.ResultUnit\"\0000\001B" +
-      "!\n\ncom.ele.ioB\013ClientProtoP\001\242\002\003CLTb\006prot" +
-      "o3"
+      "\022\024\n\014redirectPort\030\003 \001(\005\022\027\n\017redirectAddres" +
+      "s\030\004 \001(\t\"\035\n\nResultUnit\022\017\n\007content\030\001 \001(\t2h" +
+      "\n\005RpcIO\022/\n\007Command\022\021.io.ClientRequest\032\017." +
+      "io.ServerReply\"\000\022.\n\005Query\022\021.io.ClientReq" +
+      "uest\032\016.io.ResultUnit\"\0000\001B!\n\ncom.ele.ioB\013" +
+      "ClientProtoP\001\242\002\003CLTb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -71,7 +71,7 @@ public final class ClientProto {
     internal_static_io_ServerReply_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_io_ServerReply_descriptor,
-        new java.lang.String[] { "Success", "Redirect", "RedirectPort", });
+        new java.lang.String[] { "Success", "Redirect", "RedirectPort", "RedirectAddress", });
     internal_static_io_ResultUnit_descriptor =
       getDescriptor().getMessageTypes().get(2);
     internal_static_io_ResultUnit_fieldAccessorTable = new

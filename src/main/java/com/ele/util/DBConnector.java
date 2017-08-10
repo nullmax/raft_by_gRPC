@@ -10,8 +10,8 @@ public class DBConnector {
     private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
     private static final String DB_URL = "jdbc:mysql://localhost/test?useSSL=false";
 
-    private static final String USER = "username";
-    private static final String PASSWORD = "password";
+    private static final String USER = "root";
+    private static final String PASSWORD = "toor";
 
     private static Connection getConn() {
         Connection conn = null;

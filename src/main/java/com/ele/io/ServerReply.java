@@ -18,6 +18,7 @@ public  final class ServerReply extends
     success_ = false;
     redirect_ = false;
     redirectPort_ = 0;
+    redirectAddress_ = "";
   }
 
   @java.lang.Override
@@ -58,6 +59,12 @@ public  final class ServerReply extends
           case 24: {
 
             redirectPort_ = input.readInt32();
+            break;
+          }
+          case 34: {
+            java.lang.String s = input.readStringRequireUtf8();
+
+            redirectAddress_ = s;
             break;
           }
         }
@@ -110,6 +117,40 @@ public  final class ServerReply extends
     return redirectPort_;
   }
 
+  public static final int REDIRECTADDRESS_FIELD_NUMBER = 4;
+  private volatile java.lang.Object redirectAddress_;
+  /**
+   * <code>string redirectAddress = 4;</code>
+   */
+  public java.lang.String getRedirectAddress() {
+    java.lang.Object ref = redirectAddress_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      redirectAddress_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string redirectAddress = 4;</code>
+   */
+  public com.google.protobuf.ByteString
+      getRedirectAddressBytes() {
+    java.lang.Object ref = redirectAddress_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      redirectAddress_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
   private byte memoizedIsInitialized = -1;
   public final boolean isInitialized() {
     byte isInitialized = memoizedIsInitialized;
@@ -131,6 +172,9 @@ public  final class ServerReply extends
     if (redirectPort_ != 0) {
       output.writeInt32(3, redirectPort_);
     }
+    if (!getRedirectAddressBytes().isEmpty()) {
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 4, redirectAddress_);
+    }
   }
 
   public int getSerializedSize() {
@@ -149,6 +193,9 @@ public  final class ServerReply extends
     if (redirectPort_ != 0) {
       size += com.google.protobuf.CodedOutputStream
         .computeInt32Size(3, redirectPort_);
+    }
+    if (!getRedirectAddressBytes().isEmpty()) {
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, redirectAddress_);
     }
     memoizedSize = size;
     return size;
@@ -172,6 +219,8 @@ public  final class ServerReply extends
         == other.getRedirect());
     result = result && (getRedirectPort()
         == other.getRedirectPort());
+    result = result && getRedirectAddress()
+        .equals(other.getRedirectAddress());
     return result;
   }
 
@@ -190,6 +239,8 @@ public  final class ServerReply extends
         getRedirect());
     hash = (37 * hash) + REDIRECTPORT_FIELD_NUMBER;
     hash = (53 * hash) + getRedirectPort();
+    hash = (37 * hash) + REDIRECTADDRESS_FIELD_NUMBER;
+    hash = (53 * hash) + getRedirectAddress().hashCode();
     hash = (29 * hash) + unknownFields.hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -314,6 +365,8 @@ public  final class ServerReply extends
 
       redirectPort_ = 0;
 
+      redirectAddress_ = "";
+
       return this;
     }
 
@@ -339,6 +392,7 @@ public  final class ServerReply extends
       result.success_ = success_;
       result.redirect_ = redirect_;
       result.redirectPort_ = redirectPort_;
+      result.redirectAddress_ = redirectAddress_;
       onBuilt();
       return result;
     }
@@ -388,6 +442,10 @@ public  final class ServerReply extends
       }
       if (other.getRedirectPort() != 0) {
         setRedirectPort(other.getRedirectPort());
+      }
+      if (!other.getRedirectAddress().isEmpty()) {
+        redirectAddress_ = other.redirectAddress_;
+        onChanged();
       }
       onChanged();
       return this;
@@ -489,6 +547,75 @@ public  final class ServerReply extends
     public Builder clearRedirectPort() {
       
       redirectPort_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object redirectAddress_ = "";
+    /**
+     * <code>string redirectAddress = 4;</code>
+     */
+    public java.lang.String getRedirectAddress() {
+      java.lang.Object ref = redirectAddress_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        redirectAddress_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string redirectAddress = 4;</code>
+     */
+    public com.google.protobuf.ByteString
+        getRedirectAddressBytes() {
+      java.lang.Object ref = redirectAddress_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        redirectAddress_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string redirectAddress = 4;</code>
+     */
+    public Builder setRedirectAddress(
+        java.lang.String value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  
+      redirectAddress_ = value;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string redirectAddress = 4;</code>
+     */
+    public Builder clearRedirectAddress() {
+      
+      redirectAddress_ = getDefaultInstance().getRedirectAddress();
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string redirectAddress = 4;</code>
+     */
+    public Builder setRedirectAddressBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+      
+      redirectAddress_ = value;
       onChanged();
       return this;
     }

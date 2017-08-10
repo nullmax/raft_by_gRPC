@@ -21,4 +21,14 @@ public interface ServerReplyOrBuilder extends
    * <code>int32 redirectPort = 3;</code>
    */
   int getRedirectPort();
+
+  /**
+   * <code>string redirectAddress = 4;</code>
+   */
+  java.lang.String getRedirectAddress();
+  /**
+   * <code>string redirectAddress = 4;</code>
+   */
+  com.google.protobuf.ByteString
+      getRedirectAddressBytes();
 }
