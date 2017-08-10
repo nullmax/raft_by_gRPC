@@ -42,7 +42,7 @@ public class RaftServer {
     private int leaderId;
     //所有Server上的固有状态
     int currentTerm;
-    int votedFor = 0;
+    int votedFor = -1;
     Log logs;
     //所有Server上的变化状态
 //    int commitIndex;
@@ -50,19 +50,22 @@ public class RaftServer {
 
     int voteCount;
     //Leader上的变化状态
-    private final int N = 20;
-    int[] nextIndex = new int[10];
-    int[] matchIndex = new int[10];
+    int[] nextIndex;
+    int[] matchIndex;
 
-    //todo
     private ArrayList<String> addressList;
     private ArrayList<Integer> portList;
-    private boolean[] serverAvailable;
 
-    public RaftServer(int port) {
+    /**
+     * @param port
+     * @param id   0 <= id < 服务器数量
+     */
+    public RaftServer(int port, int id) {
         super();
-        serverId = ++serverCount;
-        this.port = port + serverId;
+        serverId = id;
+        this.port = port;
+
+        //this.port = port + serverId;
         logs = new Log(serverId);
 
         currentTerm = 1;
@@ -73,6 +76,14 @@ public class RaftServer {
 
         commitTask = new CommitTask();
         timer.schedule(commitTask, 20 * 1000, 20 * 1000);
+    }
+
+    public void setCommunicateList(ArrayList<String> addressList, ArrayList<Integer> portList) {
+        this.addressList = addressList;
+        this.portList = portList;
+        serverCount = addressList.size();
+        nextIndex = new int[serverCount];
+        matchIndex = new int[serverCount];
     }
 
     private synchronized void initLeader(int serverNum) {
@@ -151,7 +162,7 @@ public class RaftServer {
     }
 
 
-    public void askForVoteTo(int port) {
+    public void askForVoteTo(int sid) {
         VoteRequest.Builder builder = VoteRequest.newBuilder();
         builder.setCandidateId(serverId);
         builder.setTerm(currentTerm);
@@ -161,7 +172,7 @@ public class RaftServer {
         VoteRequest request = builder.build();
         VoteReply response;
         ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("localhost", port)
+                .forAddress(addressList.get(sid), portList.get(sid))
                 .usePlaintext(true)
                 .build();
         ConsensusGrpc.ConsensusBlockingStub blockingStub = ConsensusGrpc.newBlockingStub(channel);
@@ -188,8 +199,8 @@ public class RaftServer {
         synchronized (this) {
             builder.setTerm(currentTerm);
             builder.setLeaderId(serverId);
-            builder.setPrevLogIndex(nextIndex[sid - 1] - 1);
-            builder.setPrevLogTerm(logs.getLogByIndex(nextIndex[sid - 1] - 1).term);
+            builder.setPrevLogIndex(nextIndex[sid] - 1);
+            builder.setPrevLogTerm(logs.getLogByIndex(nextIndex[sid] - 1).term);
             builder.setGetEntries(getEntries);
             builder.setLeaderCommit(logs.commitIndex);
         }
@@ -197,7 +208,7 @@ public class RaftServer {
         FollowerReply response;
         LeaderRequest request = builder.build();
         ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("localhost", 5000 + sid)
+                .forAddress(addressList.get(sid), portList.get(sid))
                 .usePlaintext(true)
                 .build();
         ConsensusGrpc.ConsensusBlockingStub blockingStub = ConsensusGrpc.newBlockingStub(channel);
@@ -205,8 +216,8 @@ public class RaftServer {
             response = blockingStub.appendEntries(request);
             //deal with reply
             if (response.getSuccess()) {
-                matchIndex[sid - 1] = response.getMatchIndex();
-                nextIndex[sid - 1] = response.getMatchIndex() + 1;
+                matchIndex[sid] = response.getMatchIndex();
+                nextIndex[sid] = response.getMatchIndex() + 1;
                 synchronized (this) {
                     if (response.getResponseTocommandId() == currentCommandId)
                         ++commandAppendCount;
@@ -219,7 +230,7 @@ public class RaftServer {
                     syncLogTask.cancel();   //Leader下台
                     currentTerm = response.getTerm();   //更新term
                 } else {
-                    nextIndex[sid - 1] = response.getSuggestNextIndex();
+                    nextIndex[sid] = response.getSuggestNextIndex();
                 }
             }
         } catch (StatusRuntimeException e) {
@@ -228,14 +239,22 @@ public class RaftServer {
 
     }
 
-    public void getLogs() {
+    public boolean getLogs(int prevLogIndex, int prevLogTerm, boolean getEntries) {
+        if (!getEntries) {
+            if (logs.getLogByIndex(prevLogIndex).term != prevLogTerm) {
+                //may raise null pointer
+                return false;
+            } else
+                return true;
+        }
+
         FollowerRequest.Builder builder = FollowerRequest.newBuilder();
         builder.setSync(true);
         builder.setId(serverId);
         FollowerRequest request = builder.build();
 
         ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("localhost", 5000 + leaderId)
+                .forAddress(addressList.get(leaderId), portList.get(leaderId))
                 .usePlaintext(true)
                 .build();
         ConsensusGrpc.ConsensusBlockingStub blockingStub = ConsensusGrpc.newBlockingStub(channel);
@@ -245,19 +264,22 @@ public class RaftServer {
             entryIterator = blockingStub.syncLog(request);
             while (entryIterator.hasNext()) {
                 //append log
+                //todo 删除不一致的记录
                 Entry entry = entryIterator.next();
                 logs.addLogEntry(entry.getTerm(), entry.getCommand(), entry.getCommandId());
             }
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+            return false;
         }
+        return true;
     }
 
     public static void main(String[] args) throws Exception {
         int port = 5000;
         if (args.length > 0)
             port = Integer.parseInt(args[0]);
-        RaftServer server = new RaftServer(port);
+        RaftServer server = new RaftServer(port, 1);
         server.start();
         server.blockUntilShutdown();
     }
@@ -268,16 +290,16 @@ public class RaftServer {
                                 StreamObserver<VoteReply> responseObserver) {
 
             VoteReply.Builder builder = VoteReply.newBuilder();
-            if (request.getTerm() > currentTerm) {
-                if (request.getLastLogIndex() > logs.getLastIndex()
-                        || request.getLastLogIndex() == logs.getLastIndex() && request.getLatLogTerm() == logs.getLastTerm(logs.getLastIndex())) {
+            if (request.getTerm() >= currentTerm) {
+                if (request.getTerm() > logs.getLastTerm(logs.getLastIndex())
+                        || request.getLatLogTerm() == logs.getLastTerm(logs.getLastIndex()) && request.getLastLogIndex() >= logs.getLastIndex()) {
                     if (status == LEADER) {
                         status = FOLLOWER;
                         syncLogTask.cancel();   //Leader下台
                     }
                     currentTerm = request.getTerm();    //更新term
                     resetTimeout(); //重置选举计时器
-
+                    votedFor = request.getCandidateId();
                     builder.setVoteGranted(true);
                 } else {
                     builder.setVoteGranted(false);
@@ -290,7 +312,6 @@ public class RaftServer {
             VoteReply reply = builder.build();
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
-
         }
 
         @Override
@@ -305,19 +326,24 @@ public class RaftServer {
                 currentTerm = request.getTerm();
                 resetTimeout();
                 leaderId = request.getLeaderId();
-                if (request.getGetEntries()) {
-                    getLogs();  //拷贝日志
-                    // TODO 删除不一致的日志，多集群合并的情况
+                votedFor = -1;  //reset voteFor
+                //拷贝日志
+                if (getLogs(request.getPrevLogIndex(), request.getPrevLogTerm(), request.getGetEntries())) {
+                    builder.setSuccess(true);
+                    builder.setMatchIndex(logs.getLastIndex());
+                } else {
+                    builder.setSuccess(false);
+                    // set suggest
+                    if (logs.getLogByIndex(request.getPrevLogIndex()) == null)
+                        builder.setSuggestNextIndex(logs.getLastIndex() + 1);
+                    else {
+                        builder.setSuggestNextIndex(request.getPrevLogIndex() + 1);
+                    }
                 }
-                builder.setSuccess(true);
+                if (request.getLeaderCommit() > logs.commitIndex)
+                    logs.commitIndex = Math.min(request.getLeaderCommit(), logs.getLastIndex());
                 //todo 设置回应信息
                 builder.setResponseTocommandId(logs.getLogByIndex(logs.getLastIndex()).commandId);
-                // set suggest
-                if (logs.getLogByIndex(request.getPrevLogIndex()) == null)
-                    builder.setSuggestNextIndex(logs.getLastIndex() + 1);
-                else {
-                    builder.setSuggestNextIndex(request.getPrevLogIndex() + 1);
-                }
             } else if (request.getTerm() == currentTerm) {
                 if (request.getPrevLogIndex() < logs.getLastIndex()) {
                     builder.setSuccess(false);
@@ -329,29 +355,28 @@ public class RaftServer {
                     }
                     resetTimeout();
                     leaderId = request.getLeaderId();
-                    if (request.getGetEntries()) {
-                        getLogs();  //拷贝日志
+                    //拷贝日志
+                    if (getLogs(request.getPrevLogIndex(), request.getPrevLogTerm(), request.getGetEntries())) {
+                        builder.setSuccess(true);
+                        builder.setMatchIndex(logs.getLastIndex());
+                    } else {
+                        builder.setSuccess(false);
+                        // set suggest
+                        if (logs.getLogByIndex(request.getPrevLogIndex()) == null)
+                            builder.setSuggestNextIndex(logs.getLastIndex() + 1);
+                        else {
+                            builder.setSuggestNextIndex(request.getPrevLogIndex() + 1);
+                        }
                     }
-                    builder.setSuccess(true);
                     //todo 设置回应信息
                     builder.setResponseTocommandId(logs.getLogByIndex(logs.getLastIndex()).commandId);
-                    // set suggest
-                    if (logs.getLogByIndex(request.getPrevLogIndex()) == null)
-                        builder.setSuggestNextIndex(logs.getLastIndex() + 1);
-                    else {
-                        builder.setSuggestNextIndex(request.getPrevLogIndex() + 1);
-                    }
                 }
-
-
             } else {
                 builder.setSuccess(false);
                 builder.setStepDown(true);
             }
 
             builder.setTerm(currentTerm);
-            builder.setMatchIndex(logs.getLastIndex());
-
             FollowerReply reply = builder.build();
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
@@ -362,7 +387,7 @@ public class RaftServer {
             Entry.Builder builder = Entry.newBuilder();
             int requestId = request.getId();
             if (request.getSync()) {
-                for (int i = nextIndex[requestId - 1]; i <= logs.getLastIndex(); ++i) {
+                for (int i = nextIndex[requestId]; i <= logs.getLastIndex(); ++i) {
                     LogEntry logEntry = logs.getLogByIndex(i);
                     builder.setIndex(i);
                     builder.setTerm(logEntry.term);
@@ -395,19 +420,25 @@ public class RaftServer {
             if (serverId != leaderId) {
                 builder.setSuccess(false);
                 builder.setRedirect(true);
-                builder.setRedirectPort(5000 + leaderId);
+                builder.setRedirectAddress(addressList.get(leaderId));
+                builder.setRedirectPort(portList.get(leaderId));
             } else {
-                //todo fix index
-                logs.addLogEntry(currentTerm, request.getCommand(), request.getCommandId());
-                ++logs.appliedIndex;
-                waitForFollower(request.getCommandId());
-                if (DBConnector.update(request.getCommand())) {
-                    ++logs.commitIndex;
+                if (logs.checkAppliedBefore(request.getCommandId()))
                     builder.setSuccess(true);
-                } else
-                    builder.setSuccess(false);
+                else {
+                    logs.addLogEntry(currentTerm, request.getCommand(), request.getCommandId());
+                    waitForFollower(request.getCommandId());
+                    if (DBConnector.update(request.getCommand())) {
+                        ++logs.commitIndex;
+                        //todo apply after committed;
+                        ++logs.appliedIndex;
+                        builder.setSuccess(true);
+                    } else
+                        builder.setSuccess(false);
+                }
                 builder.setRedirect(false);
             }
+
             ServerReply reply = builder.build();
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
@@ -441,15 +472,14 @@ public class RaftServer {
         public void run() {
             System.out.println("Candidate " + serverId + " ask for vote!");
             status = CANDIDATE;
-            //startElection();
+            //startElection
             timer.schedule(new ElectionTimeout(), 150);
             ++currentTerm;
             votedFor = serverId;
             voteCount = 1;      //vote for self;
-            for (int i = 1; i <= serverCount; ++i) {
+            for (int i = 0; i < serverCount; ++i) {
                 if (i != serverId) {
-
-                    askForVoteTo(5000 + i);
+                    askForVoteTo(i);
                 }
             }
             if (voteCount > serverCount / 2) {
@@ -475,7 +505,7 @@ public class RaftServer {
         @Override
         public void run() {
 //            System.out.println("Server" + serverId + " is sending heartbeat");
-            for (int i = 1; i <= serverCount; ++i) {
+            for (int i = 0; i < serverCount; ++i) {
                 if (serverId != i) {
                     if (matchIndex[i] == logs.getLastIndex())
                         AppendEntriesRPC(false, i); //已经一致，发送heartbeat包
@@ -508,7 +538,7 @@ public class RaftServer {
         }
     }
 
-    // commitTask
+    //todo commitTask 现在只要保存日志的功能，follower暂时不能应用到本地数据库
     class CommitTask extends TimerTask {
         @Override
         public void run() {
