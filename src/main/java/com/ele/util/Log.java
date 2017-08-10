@@ -169,11 +169,14 @@ public class Log {
     }
 
     public boolean checkAppliedBefore(int commandId) {
-        for (int cmdId : this.recentAppended) {
-            if (cmdId == commandId) {
-                return true;
-            }
-        }
+//        for (int cmdId : this.recentAppended) {
+//            if (cmdId == commandId) {
+//                return true;
+//            }
+//        }
+        if (recentAppended.contains(commandId))
+            return true;
+
         if (this.recentAppended.size() >= 50) {
             this.recentAppended.removeFirst();
         }
@@ -187,6 +190,10 @@ public class Log {
                 return true;
             }
         }
+        if (this.recentStored.size() >= 50) {
+            this.recentStored.removeFirst();
+        }
+        this.recentStored.add(commandId);
         return false;
     }
 }

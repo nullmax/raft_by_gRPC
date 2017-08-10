@@ -293,7 +293,6 @@ public class RaftServer {
 
             VoteReply.Builder builder = VoteReply.newBuilder();
             if (request.getTerm() >= currentTerm) {
-<<<<<<< HEAD
                 if (votedFor == -1 || votedFor == request.getCandidateId()) {
                     if (request.getTerm() > logs.getLastTerm(logs.getLastIndex())
                             || request.getLatLogTerm() == logs.getLastTerm(logs.getLastIndex()) && request.getLastLogIndex() >= logs.getLastIndex()) {
@@ -310,19 +309,6 @@ public class RaftServer {
                         builder.setVoteGranted(false);
                     }
                 } else
-=======
-                if (request.getTerm() > logs.getLastTerm(logs.getLastIndex())
-                        || request.getLatLogTerm() == logs.getLastTerm(logs.getLastIndex()) && request.getLastLogIndex() >= logs.getLastIndex()) {
-                    if (status == LEADER) {
-                        status = FOLLOWER;
-                        syncLogTask.cancel();   //Leader下台
-                    }
-                    currentTerm = request.getTerm();    //更新term
-                    resetTimeout(); //重置选举计时器
-                    votedFor = request.getCandidateId();
-                    builder.setVoteGranted(true);
-                } else {
->>>>>>> 8518d15d780dfe8d92aff9bb5224dd1f1d6a1bcc
                     builder.setVoteGranted(false);
             } else {
                 builder.setVoteGranted(false);
@@ -440,25 +426,19 @@ public class RaftServer {
                 builder.setRedirectAddress(addressList.get(leaderId));
                 builder.setRedirectPort(portList.get(leaderId));
             } else {
-<<<<<<< HEAD
                 logger.info("The command of Client:" + request.getCommand());
-=======
->>>>>>> 8518d15d780dfe8d92aff9bb5224dd1f1d6a1bcc
                 if (logs.checkAppliedBefore(request.getCommandId()))
                     builder.setSuccess(true);
                 else {
                     logs.addLogEntry(currentTerm, request.getCommand(), request.getCommandId());
-<<<<<<< HEAD
 
                     waitForFollower(request.getCommandId());
 
-=======
-                    waitForFollower(request.getCommandId());
->>>>>>> 8518d15d780dfe8d92aff9bb5224dd1f1d6a1bcc
                     if (DBConnector.update(request.getCommand())) {
                         ++logs.commitIndex;
                         //todo apply after committed;
                         ++logs.appliedIndex;
+                        System.out.println(request.getCommand() + "executed");
                         builder.setSuccess(true);
                     } else
                         builder.setSuccess(false);

@@ -4,7 +4,7 @@ import java.util.Scanner;
 
 public class TestClient {
     public static void main(String[] args) throws Exception {
-        CommonClient client = new CommonClient("localhost", 5500);
+        CommonClient client = new CommonClient("localhost", 5500, 10);
         String command;
         try {
 //            command = "DELETE FROM simple";
@@ -20,7 +20,6 @@ public class TestClient {
                 Scanner scanner = new Scanner(System.in);
                 System.out.print("Command: ");
                 command = scanner.nextLine();
-                client.setCommandId(4);
                 client.commandServer(command);
             }
         } finally {

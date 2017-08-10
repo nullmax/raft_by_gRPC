@@ -20,26 +20,23 @@ public class CommonClient {
     private ManagedChannel channel;
     private RpcIOGrpc.RpcIOBlockingStub blockingStub;
 
-    private int commandId = 0;
+    private int commandId;
 
     CommonClient(ManagedChannel channel) {
         this.channel = channel;
         blockingStub = RpcIOGrpc.newBlockingStub(channel);
     }
 
-    public void setCommandId(int i) {
-        commandId = i;
-    }
-
-    private synchronized int increaseCommandId() {
+    private int increasedCommandId() {
         return commandId++;
     }
 
-    public CommonClient(String host, int port) {
+    public CommonClient(String host, int port, int commandId) {
         this(ManagedChannelBuilder
                 .forAddress(host, port)
                 .usePlaintext(true)
                 .build());
+        this.commandId = commandId;
     }
 
     private void setChannel(String address, int port) {
@@ -59,7 +56,8 @@ public class CommonClient {
         logger.info("Send \"" + command + "\" to server");
         ClientRequest.Builder builder = ClientRequest.newBuilder();
         builder.setCommand(command);
-        builder.setCommandId(increaseCommandId());
+        builder.setCommandId(increasedCommandId());
+
         ClientRequest request = builder.build();
         ServerReply response;
 
@@ -97,7 +95,7 @@ public class CommonClient {
     }
 
     public static void main(String[] args) throws Exception {
-        CommonClient client = new CommonClient("localhost", 5001);
+        CommonClient client = new CommonClient("localhost", 5001, 1);
         try {
             String command = "DELETE FROM simple";
             client.commandServer(command);
