@@ -147,7 +147,7 @@ public class Log {
                 String sql = "INSERT INTO " + name + " VALUES (" + logEntry.term + "," + logEntry.logIndex + "," + logEntry.commandId + ",\'" + logEntry.command + "\')";
                 DBConnector.update(sql);
                 updateFlag = true;
-                if (this.recentStored.size() >= 50) {
+                if (this.recentStored.size() >= 200) {
                     this.recentStored.removeFirst();
                 }
                 this.recentStored.add(logEntry.commandId);
@@ -190,10 +190,10 @@ public class Log {
                 return true;
             }
         }
-        if (this.recentStored.size() >= 50) {
-            this.recentStored.removeFirst();
-        }
-        this.recentStored.add(commandId);
+//        if (this.recentStored.size() >= 50) {
+//            this.recentStored.removeFirst();
+//        }
+//        this.recentStored.add(commandId);
         return false;
     }
 }

@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DBConnector {
     private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
@@ -13,13 +15,16 @@ public class DBConnector {
     private static final String USER = "root";
     private static final String PASSWORD = "toor";
 
+    private static Connection conn;
+
     private static Connection getConn() {
-        Connection conn = null;
+        if (conn != null)
+            return conn;
         try {
             Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(DB_URL, USER, PASSWORD);
         } catch (ClassNotFoundException | SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         return conn;
     }
@@ -56,15 +61,12 @@ public class DBConnector {
 
             rs.close();
             stmt.close();
-            conn.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         } finally {
             try {
                 if (stmt != null)
                     stmt.close();
-                if (conn != null)
-                    conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -80,7 +82,6 @@ public class DBConnector {
             stmt.executeUpdate(sql);
 
             stmt.close();
-            conn.close();
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -88,8 +89,6 @@ public class DBConnector {
             try {
                 if (stmt != null)
                     stmt.close();
-                if (conn != null)
-                    conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -97,13 +96,29 @@ public class DBConnector {
         return true;
     }
 
+    public static void releaseConn() {
+        if (conn != null) {
+            synchronized (conn) {
+                try {
+                    conn.close();
+                    conn = null;
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) {
-        String sql = "DELETE FROM simple";
-        update(sql);
-        sql = "INSERT INTO simple VALUES (1, 9)";
-        update(sql);
-        sql = "SELECT * FROM simple";
-        get(sql);
+        AtomicInteger atomicInteger = new AtomicInteger(7);
+        atomicInteger.incrementAndGet();
+        System.out.println(atomicInteger.intValue());
+//        String sql = "DELETE FROM simple";
+//        update(sql);
+//        sql = "INSERT INTO simple VALUES (1, 9)";
+//        update(sql);
+//        sql = "SELECT * FROM simple";
+//        get(sql);
     }
 
 }

@@ -10,6 +10,7 @@ import io.grpc.StatusRuntimeException;
 
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,23 +21,22 @@ public class CommonClient {
     private ManagedChannel channel;
     private RpcIOGrpc.RpcIOBlockingStub blockingStub;
 
-    private int commandId;
+    private static AtomicInteger commandId = new AtomicInteger(0);
+    private static AtomicInteger clientCount = new AtomicInteger(0);
+
+    public int id;
 
     CommonClient(ManagedChannel channel) {
         this.channel = channel;
         blockingStub = RpcIOGrpc.newBlockingStub(channel);
     }
 
-    private int increasedCommandId() {
-        return commandId++;
-    }
-
-    public CommonClient(String host, int port, int commandId) {
+    public CommonClient(String host, int port) {
         this(ManagedChannelBuilder
                 .forAddress(host, port)
                 .usePlaintext(true)
                 .build());
-        this.commandId = commandId;
+        id = clientCount.getAndIncrement();
     }
 
     private void setChannel(String address, int port) {
@@ -56,7 +56,7 @@ public class CommonClient {
         logger.info("Send \"" + command + "\" to server");
         ClientRequest.Builder builder = ClientRequest.newBuilder();
         builder.setCommand(command);
-        builder.setCommandId(increasedCommandId());
+        builder.setCommandId(commandId.incrementAndGet());
 
         ClientRequest request = builder.build();
         ServerReply response;
@@ -95,7 +95,7 @@ public class CommonClient {
     }
 
     public static void main(String[] args) throws Exception {
-        CommonClient client = new CommonClient("localhost", 5001, 1);
+        CommonClient client = new CommonClient("localhost", 5001);
         try {
             String command = "DELETE FROM simple";
             client.commandServer(command);
