@@ -54,18 +54,6 @@ public final class ConsensusGrpc {
           .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
               com.ele.raft.FollowerReply.getDefaultInstance()))
           .build();
-  @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
-  public static final io.grpc.MethodDescriptor<com.ele.raft.FollowerRequest,
-      com.ele.raft.Entry> METHOD_SYNC_LOG =
-      io.grpc.MethodDescriptor.<com.ele.raft.FollowerRequest, com.ele.raft.Entry>newBuilder()
-          .setType(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
-          .setFullMethodName(generateFullMethodName(
-              "raft.Consensus", "SyncLog"))
-          .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-              com.ele.raft.FollowerRequest.getDefaultInstance()))
-          .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-              com.ele.raft.Entry.getDefaultInstance()))
-          .build();
 
   /**
    * Creates a new async stub that supports all call types for the service
@@ -117,16 +105,6 @@ public final class ConsensusGrpc {
       asyncUnimplementedUnaryCall(METHOD_APPEND_ENTRIES, responseObserver);
     }
 
-    /**
-     * <pre>
-     * Leader发送日志
-     * </pre>
-     */
-    public void syncLog(com.ele.raft.FollowerRequest request,
-        io.grpc.stub.StreamObserver<com.ele.raft.Entry> responseObserver) {
-      asyncUnimplementedUnaryCall(METHOD_SYNC_LOG, responseObserver);
-    }
-
     @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
       return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
           .addMethod(
@@ -143,13 +121,6 @@ public final class ConsensusGrpc {
                 com.ele.raft.LeaderRequest,
                 com.ele.raft.FollowerReply>(
                   this, METHODID_APPEND_ENTRIES)))
-          .addMethod(
-            METHOD_SYNC_LOG,
-            asyncServerStreamingCall(
-              new MethodHandlers<
-                com.ele.raft.FollowerRequest,
-                com.ele.raft.Entry>(
-                  this, METHODID_SYNC_LOG)))
           .build();
     }
   }
@@ -196,17 +167,6 @@ public final class ConsensusGrpc {
       asyncUnaryCall(
           getChannel().newCall(METHOD_APPEND_ENTRIES, getCallOptions()), request, responseObserver);
     }
-
-    /**
-     * <pre>
-     * Leader发送日志
-     * </pre>
-     */
-    public void syncLog(com.ele.raft.FollowerRequest request,
-        io.grpc.stub.StreamObserver<com.ele.raft.Entry> responseObserver) {
-      asyncServerStreamingCall(
-          getChannel().newCall(METHOD_SYNC_LOG, getCallOptions()), request, responseObserver);
-    }
   }
 
   /**
@@ -248,17 +208,6 @@ public final class ConsensusGrpc {
     public com.ele.raft.FollowerReply appendEntries(com.ele.raft.LeaderRequest request) {
       return blockingUnaryCall(
           getChannel(), METHOD_APPEND_ENTRIES, getCallOptions(), request);
-    }
-
-    /**
-     * <pre>
-     * Leader发送日志
-     * </pre>
-     */
-    public java.util.Iterator<com.ele.raft.Entry> syncLog(
-        com.ele.raft.FollowerRequest request) {
-      return blockingServerStreamingCall(
-          getChannel(), METHOD_SYNC_LOG, getCallOptions(), request);
     }
   }
 
@@ -308,7 +257,6 @@ public final class ConsensusGrpc {
 
   private static final int METHODID_REQUEST_VOTE = 0;
   private static final int METHODID_APPEND_ENTRIES = 1;
-  private static final int METHODID_SYNC_LOG = 2;
 
   private static final class MethodHandlers<Req, Resp> implements
       io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
@@ -334,10 +282,6 @@ public final class ConsensusGrpc {
         case METHODID_APPEND_ENTRIES:
           serviceImpl.appendEntries((com.ele.raft.LeaderRequest) request,
               (io.grpc.stub.StreamObserver<com.ele.raft.FollowerReply>) responseObserver);
-          break;
-        case METHODID_SYNC_LOG:
-          serviceImpl.syncLog((com.ele.raft.FollowerRequest) request,
-              (io.grpc.stub.StreamObserver<com.ele.raft.Entry>) responseObserver);
           break;
         default:
           throw new AssertionError();
@@ -374,7 +318,6 @@ public final class ConsensusGrpc {
               .setSchemaDescriptor(new ConsensusDescriptorSupplier())
               .addMethod(METHOD_REQUEST_VOTE)
               .addMethod(METHOD_APPEND_ENTRIES)
-              .addMethod(METHOD_SYNC_LOG)
               .build();
         }
       }

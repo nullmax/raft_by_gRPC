@@ -28,13 +28,28 @@ public interface LeaderRequestOrBuilder extends
   int getPrevLogTerm();
 
   /**
-   * <pre>
-   *true 进行日志复制;false 相当于heartbeat包
-   * </pre>
-   *
-   * <code>bool getEntries = 5;</code>
+   * <code>repeated .raft.Entry entries = 5;</code>
    */
-  boolean getGetEntries();
+  java.util.List<com.ele.raft.Entry> 
+      getEntriesList();
+  /**
+   * <code>repeated .raft.Entry entries = 5;</code>
+   */
+  com.ele.raft.Entry getEntries(int index);
+  /**
+   * <code>repeated .raft.Entry entries = 5;</code>
+   */
+  int getEntriesCount();
+  /**
+   * <code>repeated .raft.Entry entries = 5;</code>
+   */
+  java.util.List<? extends com.ele.raft.EntryOrBuilder> 
+      getEntriesOrBuilderList();
+  /**
+   * <code>repeated .raft.Entry entries = 5;</code>
+   */
+  com.ele.raft.EntryOrBuilder getEntriesOrBuilder(
+      int index);
 
   /**
    * <code>int32 leaderCommit = 6;</code>

@@ -28,7 +28,7 @@ public class Log {
         recentStored = new LinkedList<Integer>();
 
         getLastIndex();
-        getLastTerm(lastIndexCache);
+        getLastTerm();
 
         commitIndex = lastIndexCache;
         appliedIndex = commitIndex;
@@ -73,10 +73,10 @@ public class Log {
         return lastIndexCache;
     }
 
-    public synchronized int getLastTerm(int lastLogIndex) {
+    public synchronized int getLastTerm() {
         if (termCacheDirty) {
             if (logEntries.isEmpty()) {
-                String queryString = "SELECT term FROM " + name + " WHERE logIndex = " + lastLogIndex;
+                String queryString = "SELECT term FROM " + name + " WHERE logIndex = " + getLastIndex();
                 List<Map<String, Object>> result = DBConnector.get(queryString);
                 lastTermCache = (result.isEmpty() ? 1 : (Integer) result.get(0).get("term"));
             } else {
@@ -115,7 +115,7 @@ public class Log {
     }
 
     // delete log from local state machine which index >= begin
-    public synchronized void delete_logEntry(int begin) {
+    public synchronized void deleteLogEntry(int begin) {
         Iterator<LogEntry> it = logEntries.iterator();
         while (it.hasNext()) {
             LogEntry log = it.next();
@@ -147,7 +147,7 @@ public class Log {
                 String sql = "INSERT INTO " + name + " VALUES (" + logEntry.term + "," + logEntry.logIndex + "," + logEntry.commandId + ",\'" + logEntry.command + "\')";
                 DBConnector.update(sql);
                 updateFlag = true;
-                if (this.recentStored.size() >= 200) {
+                if (this.recentStored.size() >= 500) {
                     this.recentStored.removeFirst();
                 }
                 this.recentStored.add(logEntry.commandId);
@@ -177,7 +177,7 @@ public class Log {
         if (recentAppended.contains(commandId))
             return true;
 
-        if (this.recentAppended.size() >= 50) {
+        if (this.recentAppended.size() >= 250) {
             this.recentAppended.removeFirst();
         }
         this.recentAppended.add(commandId);

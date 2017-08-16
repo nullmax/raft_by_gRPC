@@ -35,11 +35,6 @@ public final class RaftProto {
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_raft_FollowerReply_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_raft_FollowerRequest_descriptor;
-  static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_raft_FollowerRequest_fieldAccessorTable;
-  static final com.google.protobuf.Descriptors.Descriptor
     internal_static_raft_Entry_descriptor;
   static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
@@ -56,23 +51,21 @@ public final class RaftProto {
       "\n\nraft.proto\022\004raft\"Z\n\013VoteRequest\022\014\n\004ter" +
       "m\030\001 \001(\005\022\023\n\013candidateId\030\002 \001(\005\022\024\n\014lastLogI" +
       "ndex\030\003 \001(\005\022\022\n\nlatLogTerm\030\004 \001(\005\".\n\tVoteRe" +
-      "ply\022\014\n\004term\030\001 \001(\005\022\023\n\013voteGranted\030\002 \001(\010\"\204" +
+      "ply\022\014\n\004term\030\001 \001(\005\022\023\n\013voteGranted\030\002 \001(\010\"\216" +
       "\001\n\rLeaderRequest\022\014\n\004term\030\001 \001(\005\022\020\n\010leader" +
       "Id\030\002 \001(\005\022\024\n\014prevLogIndex\030\003 \001(\005\022\023\n\013prevLo" +
-      "gTerm\030\004 \001(\005\022\022\n\ngetEntries\030\005 \001(\010\022\024\n\014leade" +
-      "rCommit\030\006 \001(\005\"\213\001\n\rFollowerReply\022\014\n\004term\030" +
-      "\001 \001(\005\022\017\n\007success\030\002 \001(\010\022\022\n\nmatchIndex\030\003 \001" +
-      "(\005\022\020\n\010stepDown\030\004 \001(\010\022\030\n\020suggestNextIndex",
-      "\030\005 \001(\005\022\033\n\023responseTocommandId\030\006 \001(\005\"+\n\017F" +
-      "ollowerRequest\022\014\n\004sync\030\001 \001(\010\022\n\n\002id\030\002 \001(\005" +
-      "\"H\n\005Entry\022\014\n\004term\030\001 \001(\005\022\r\n\005index\030\002 \001(\005\022\021" +
-      "\n\tcommandId\030\003 \001(\005\022\017\n\007command\030\004 \001(\t2\260\001\n\tC" +
-      "onsensus\0223\n\013RequestVote\022\021.raft.VoteReque" +
-      "st\032\017.raft.VoteReply\"\000\022;\n\rAppendEntries\022\023" +
-      ".raft.LeaderRequest\032\023.raft.FollowerReply" +
-      "\"\000\0221\n\007SyncLog\022\025.raft.FollowerRequest\032\013.r" +
-      "aft.Entry\"\0000\001B\"\n\014com.ele.raftB\tRaftProto" +
-      "P\001\242\002\004RAFTb\006proto3"
+      "gTerm\030\004 \001(\005\022\034\n\007entries\030\005 \003(\0132\013.raft.Entr" +
+      "y\022\024\n\014leaderCommit\030\006 \001(\005\"\213\001\n\rFollowerRepl" +
+      "y\022\014\n\004term\030\001 \001(\005\022\017\n\007success\030\002 \001(\010\022\022\n\nmatc" +
+      "hIndex\030\003 \001(\005\022\020\n\010stepDown\030\004 \001(\010\022\030\n\020sugges",
+      "tNextIndex\030\005 \001(\005\022\033\n\023responseTocommandId\030" +
+      "\006 \001(\005\"H\n\005Entry\022\014\n\004term\030\001 \001(\005\022\r\n\005index\030\002 " +
+      "\001(\005\022\021\n\tcommandId\030\003 \001(\005\022\017\n\007command\030\004 \001(\t2" +
+      "}\n\tConsensus\0223\n\013RequestVote\022\021.raft.VoteR" +
+      "equest\032\017.raft.VoteReply\"\000\022;\n\rAppendEntri" +
+      "es\022\023.raft.LeaderRequest\032\023.raft.FollowerR" +
+      "eply\"\000B\"\n\014com.ele.raftB\tRaftProtoP\001\242\002\004RA" +
+      "FTb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -103,21 +96,15 @@ public final class RaftProto {
     internal_static_raft_LeaderRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_raft_LeaderRequest_descriptor,
-        new java.lang.String[] { "Term", "LeaderId", "PrevLogIndex", "PrevLogTerm", "GetEntries", "LeaderCommit", });
+        new java.lang.String[] { "Term", "LeaderId", "PrevLogIndex", "PrevLogTerm", "Entries", "LeaderCommit", });
     internal_static_raft_FollowerReply_descriptor =
       getDescriptor().getMessageTypes().get(3);
     internal_static_raft_FollowerReply_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_raft_FollowerReply_descriptor,
         new java.lang.String[] { "Term", "Success", "MatchIndex", "StepDown", "SuggestNextIndex", "ResponseTocommandId", });
-    internal_static_raft_FollowerRequest_descriptor =
-      getDescriptor().getMessageTypes().get(4);
-    internal_static_raft_FollowerRequest_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_raft_FollowerRequest_descriptor,
-        new java.lang.String[] { "Sync", "Id", });
     internal_static_raft_Entry_descriptor =
-      getDescriptor().getMessageTypes().get(5);
+      getDescriptor().getMessageTypes().get(4);
     internal_static_raft_Entry_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_raft_Entry_descriptor,

@@ -16,7 +16,7 @@ public class TestClient {
                 public void run() {
                     CommonClient commonClient = new CommonClient("localhost", 5500);
                     String command;
-                    for (int j = 0; j < 30; ++j) { //todo 总数暂时不要超过200
+                    for (int j = 0; j < 50; ++j) { //todo 总数暂时不要超过200
                         command = getCommand(index.getAndIncrement(), commonClient.id);
                         commonClient.commandServer(command);
                     }

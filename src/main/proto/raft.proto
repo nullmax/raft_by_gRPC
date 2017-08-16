@@ -16,10 +16,6 @@ service Consensus {
     // Leader发起同步
     rpc AppendEntries (LeaderRequest) returns (FollowerReply) {
     }
-
-    // Leader发送日志
-    rpc SyncLog (FollowerRequest) returns (stream Entry) {
-    }
 }
 
 // 投票请求
@@ -42,7 +38,7 @@ message LeaderRequest {
     int32 leaderId = 2;
     int32 prevLogIndex = 3;
     int32 prevLogTerm = 4;
-    bool getEntries = 5; //true 进行日志复制;false 相当于heartbeat包
+    repeated Entry entries = 5;
     int32 leaderCommit = 6;
 }
 
@@ -54,12 +50,6 @@ message FollowerReply {
     bool stepDown = 4;
     int32 suggestNextIndex = 5;
     int32 responseTocommandId = 6;
-}
-
-// Follower同步日志请求
-message FollowerRequest {
-    bool sync = 1;
-    int32 id = 2;
 }
 
 // 日志

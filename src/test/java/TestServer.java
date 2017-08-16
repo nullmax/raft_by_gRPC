@@ -22,7 +22,8 @@ public class TestServer {
             servers[i].start();
         }
 
-        for (int i = 0; i < servers.length; ++i)
+        for (int i = 0; i < servers.length; ++i) {
             servers[i].blockUntilShutdown();
+        }
     }
 }

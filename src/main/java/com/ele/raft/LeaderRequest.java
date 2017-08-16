@@ -23,7 +23,7 @@ public  final class LeaderRequest extends
     leaderId_ = 0;
     prevLogIndex_ = 0;
     prevLogTerm_ = 0;
-    getEntries_ = false;
+    entries_ = java.util.Collections.emptyList();
     leaderCommit_ = 0;
   }
 
@@ -72,9 +72,13 @@ public  final class LeaderRequest extends
             prevLogTerm_ = input.readInt32();
             break;
           }
-          case 40: {
-
-            getEntries_ = input.readBool();
+          case 42: {
+            if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+              entries_ = new java.util.ArrayList<com.ele.raft.Entry>();
+              mutable_bitField0_ |= 0x00000010;
+            }
+            entries_.add(
+                input.readMessage(com.ele.raft.Entry.parser(), extensionRegistry));
             break;
           }
           case 48: {
@@ -90,6 +94,9 @@ public  final class LeaderRequest extends
       throw new com.google.protobuf.InvalidProtocolBufferException(
           e).setUnfinishedMessage(this);
     } finally {
+      if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+        entries_ = java.util.Collections.unmodifiableList(entries_);
+      }
       makeExtensionsImmutable();
     }
   }
@@ -105,6 +112,7 @@ public  final class LeaderRequest extends
             com.ele.raft.LeaderRequest.class, com.ele.raft.LeaderRequest.Builder.class);
   }
 
+  private int bitField0_;
   public static final int TERM_FIELD_NUMBER = 1;
   private int term_;
   /**
@@ -141,17 +149,39 @@ public  final class LeaderRequest extends
     return prevLogTerm_;
   }
 
-  public static final int GETENTRIES_FIELD_NUMBER = 5;
-  private boolean getEntries_;
+  public static final int ENTRIES_FIELD_NUMBER = 5;
+  private java.util.List<com.ele.raft.Entry> entries_;
   /**
-   * <pre>
-   *true 进行日志复制;false 相当于heartbeat包
-   * </pre>
-   *
-   * <code>bool getEntries = 5;</code>
+   * <code>repeated .raft.Entry entries = 5;</code>
    */
-  public boolean getGetEntries() {
-    return getEntries_;
+  public java.util.List<com.ele.raft.Entry> getEntriesList() {
+    return entries_;
+  }
+  /**
+   * <code>repeated .raft.Entry entries = 5;</code>
+   */
+  public java.util.List<? extends com.ele.raft.EntryOrBuilder> 
+      getEntriesOrBuilderList() {
+    return entries_;
+  }
+  /**
+   * <code>repeated .raft.Entry entries = 5;</code>
+   */
+  public int getEntriesCount() {
+    return entries_.size();
+  }
+  /**
+   * <code>repeated .raft.Entry entries = 5;</code>
+   */
+  public com.ele.raft.Entry getEntries(int index) {
+    return entries_.get(index);
+  }
+  /**
+   * <code>repeated .raft.Entry entries = 5;</code>
+   */
+  public com.ele.raft.EntryOrBuilder getEntriesOrBuilder(
+      int index) {
+    return entries_.get(index);
   }
 
   public static final int LEADERCOMMIT_FIELD_NUMBER = 6;
@@ -187,8 +217,8 @@ public  final class LeaderRequest extends
     if (prevLogTerm_ != 0) {
       output.writeInt32(4, prevLogTerm_);
     }
-    if (getEntries_ != false) {
-      output.writeBool(5, getEntries_);
+    for (int i = 0; i < entries_.size(); i++) {
+      output.writeMessage(5, entries_.get(i));
     }
     if (leaderCommit_ != 0) {
       output.writeInt32(6, leaderCommit_);
@@ -216,9 +246,9 @@ public  final class LeaderRequest extends
       size += com.google.protobuf.CodedOutputStream
         .computeInt32Size(4, prevLogTerm_);
     }
-    if (getEntries_ != false) {
+    for (int i = 0; i < entries_.size(); i++) {
       size += com.google.protobuf.CodedOutputStream
-        .computeBoolSize(5, getEntries_);
+        .computeMessageSize(5, entries_.get(i));
     }
     if (leaderCommit_ != 0) {
       size += com.google.protobuf.CodedOutputStream
@@ -248,8 +278,8 @@ public  final class LeaderRequest extends
         == other.getPrevLogIndex());
     result = result && (getPrevLogTerm()
         == other.getPrevLogTerm());
-    result = result && (getGetEntries()
-        == other.getGetEntries());
+    result = result && getEntriesList()
+        .equals(other.getEntriesList());
     result = result && (getLeaderCommit()
         == other.getLeaderCommit());
     return result;
@@ -270,9 +300,10 @@ public  final class LeaderRequest extends
     hash = (53 * hash) + getPrevLogIndex();
     hash = (37 * hash) + PREVLOGTERM_FIELD_NUMBER;
     hash = (53 * hash) + getPrevLogTerm();
-    hash = (37 * hash) + GETENTRIES_FIELD_NUMBER;
-    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-        getGetEntries());
+    if (getEntriesCount() > 0) {
+      hash = (37 * hash) + ENTRIES_FIELD_NUMBER;
+      hash = (53 * hash) + getEntriesList().hashCode();
+    }
     hash = (37 * hash) + LEADERCOMMIT_FIELD_NUMBER;
     hash = (53 * hash) + getLeaderCommit();
     hash = (29 * hash) + unknownFields.hashCode();
@@ -393,6 +424,7 @@ public  final class LeaderRequest extends
     private void maybeForceBuilderInitialization() {
       if (com.google.protobuf.GeneratedMessageV3
               .alwaysUseFieldBuilders) {
+        getEntriesFieldBuilder();
       }
     }
     public Builder clear() {
@@ -405,8 +437,12 @@ public  final class LeaderRequest extends
 
       prevLogTerm_ = 0;
 
-      getEntries_ = false;
-
+      if (entriesBuilder_ == null) {
+        entries_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x00000010);
+      } else {
+        entriesBuilder_.clear();
+      }
       leaderCommit_ = 0;
 
       return this;
@@ -431,12 +467,23 @@ public  final class LeaderRequest extends
 
     public com.ele.raft.LeaderRequest buildPartial() {
       com.ele.raft.LeaderRequest result = new com.ele.raft.LeaderRequest(this);
+      int from_bitField0_ = bitField0_;
+      int to_bitField0_ = 0;
       result.term_ = term_;
       result.leaderId_ = leaderId_;
       result.prevLogIndex_ = prevLogIndex_;
       result.prevLogTerm_ = prevLogTerm_;
-      result.getEntries_ = getEntries_;
+      if (entriesBuilder_ == null) {
+        if (((bitField0_ & 0x00000010) == 0x00000010)) {
+          entries_ = java.util.Collections.unmodifiableList(entries_);
+          bitField0_ = (bitField0_ & ~0x00000010);
+        }
+        result.entries_ = entries_;
+      } else {
+        result.entries_ = entriesBuilder_.build();
+      }
       result.leaderCommit_ = leaderCommit_;
+      result.bitField0_ = to_bitField0_;
       onBuilt();
       return result;
     }
@@ -490,8 +537,31 @@ public  final class LeaderRequest extends
       if (other.getPrevLogTerm() != 0) {
         setPrevLogTerm(other.getPrevLogTerm());
       }
-      if (other.getGetEntries() != false) {
-        setGetEntries(other.getGetEntries());
+      if (entriesBuilder_ == null) {
+        if (!other.entries_.isEmpty()) {
+          if (entries_.isEmpty()) {
+            entries_ = other.entries_;
+            bitField0_ = (bitField0_ & ~0x00000010);
+          } else {
+            ensureEntriesIsMutable();
+            entries_.addAll(other.entries_);
+          }
+          onChanged();
+        }
+      } else {
+        if (!other.entries_.isEmpty()) {
+          if (entriesBuilder_.isEmpty()) {
+            entriesBuilder_.dispose();
+            entriesBuilder_ = null;
+            entries_ = other.entries_;
+            bitField0_ = (bitField0_ & ~0x00000010);
+            entriesBuilder_ = 
+              com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                 getEntriesFieldBuilder() : null;
+          } else {
+            entriesBuilder_.addAllMessages(other.entries_);
+          }
+        }
       }
       if (other.getLeaderCommit() != 0) {
         setLeaderCommit(other.getLeaderCommit());
@@ -521,6 +591,7 @@ public  final class LeaderRequest extends
       }
       return this;
     }
+    private int bitField0_;
 
     private int term_ ;
     /**
@@ -626,42 +697,244 @@ public  final class LeaderRequest extends
       return this;
     }
 
-    private boolean getEntries_ ;
+    private java.util.List<com.ele.raft.Entry> entries_ =
+      java.util.Collections.emptyList();
+    private void ensureEntriesIsMutable() {
+      if (!((bitField0_ & 0x00000010) == 0x00000010)) {
+        entries_ = new java.util.ArrayList<com.ele.raft.Entry>(entries_);
+        bitField0_ |= 0x00000010;
+       }
+    }
+
+    private com.google.protobuf.RepeatedFieldBuilderV3<
+        com.ele.raft.Entry, com.ele.raft.Entry.Builder, com.ele.raft.EntryOrBuilder> entriesBuilder_;
+
     /**
-     * <pre>
-     *true 进行日志复制;false 相当于heartbeat包
-     * </pre>
-     *
-     * <code>bool getEntries = 5;</code>
+     * <code>repeated .raft.Entry entries = 5;</code>
      */
-    public boolean getGetEntries() {
-      return getEntries_;
+    public java.util.List<com.ele.raft.Entry> getEntriesList() {
+      if (entriesBuilder_ == null) {
+        return java.util.Collections.unmodifiableList(entries_);
+      } else {
+        return entriesBuilder_.getMessageList();
+      }
     }
     /**
-     * <pre>
-     *true 进行日志复制;false 相当于heartbeat包
-     * </pre>
-     *
-     * <code>bool getEntries = 5;</code>
+     * <code>repeated .raft.Entry entries = 5;</code>
      */
-    public Builder setGetEntries(boolean value) {
-      
-      getEntries_ = value;
-      onChanged();
+    public int getEntriesCount() {
+      if (entriesBuilder_ == null) {
+        return entries_.size();
+      } else {
+        return entriesBuilder_.getCount();
+      }
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public com.ele.raft.Entry getEntries(int index) {
+      if (entriesBuilder_ == null) {
+        return entries_.get(index);
+      } else {
+        return entriesBuilder_.getMessage(index);
+      }
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public Builder setEntries(
+        int index, com.ele.raft.Entry value) {
+      if (entriesBuilder_ == null) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        ensureEntriesIsMutable();
+        entries_.set(index, value);
+        onChanged();
+      } else {
+        entriesBuilder_.setMessage(index, value);
+      }
       return this;
     }
     /**
-     * <pre>
-     *true 进行日志复制;false 相当于heartbeat包
-     * </pre>
-     *
-     * <code>bool getEntries = 5;</code>
+     * <code>repeated .raft.Entry entries = 5;</code>
      */
-    public Builder clearGetEntries() {
-      
-      getEntries_ = false;
-      onChanged();
+    public Builder setEntries(
+        int index, com.ele.raft.Entry.Builder builderForValue) {
+      if (entriesBuilder_ == null) {
+        ensureEntriesIsMutable();
+        entries_.set(index, builderForValue.build());
+        onChanged();
+      } else {
+        entriesBuilder_.setMessage(index, builderForValue.build());
+      }
       return this;
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public Builder addEntries(com.ele.raft.Entry value) {
+      if (entriesBuilder_ == null) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        ensureEntriesIsMutable();
+        entries_.add(value);
+        onChanged();
+      } else {
+        entriesBuilder_.addMessage(value);
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public Builder addEntries(
+        int index, com.ele.raft.Entry value) {
+      if (entriesBuilder_ == null) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        ensureEntriesIsMutable();
+        entries_.add(index, value);
+        onChanged();
+      } else {
+        entriesBuilder_.addMessage(index, value);
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public Builder addEntries(
+        com.ele.raft.Entry.Builder builderForValue) {
+      if (entriesBuilder_ == null) {
+        ensureEntriesIsMutable();
+        entries_.add(builderForValue.build());
+        onChanged();
+      } else {
+        entriesBuilder_.addMessage(builderForValue.build());
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public Builder addEntries(
+        int index, com.ele.raft.Entry.Builder builderForValue) {
+      if (entriesBuilder_ == null) {
+        ensureEntriesIsMutable();
+        entries_.add(index, builderForValue.build());
+        onChanged();
+      } else {
+        entriesBuilder_.addMessage(index, builderForValue.build());
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public Builder addAllEntries(
+        java.lang.Iterable<? extends com.ele.raft.Entry> values) {
+      if (entriesBuilder_ == null) {
+        ensureEntriesIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, entries_);
+        onChanged();
+      } else {
+        entriesBuilder_.addAllMessages(values);
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public Builder clearEntries() {
+      if (entriesBuilder_ == null) {
+        entries_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x00000010);
+        onChanged();
+      } else {
+        entriesBuilder_.clear();
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public Builder removeEntries(int index) {
+      if (entriesBuilder_ == null) {
+        ensureEntriesIsMutable();
+        entries_.remove(index);
+        onChanged();
+      } else {
+        entriesBuilder_.remove(index);
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public com.ele.raft.Entry.Builder getEntriesBuilder(
+        int index) {
+      return getEntriesFieldBuilder().getBuilder(index);
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public com.ele.raft.EntryOrBuilder getEntriesOrBuilder(
+        int index) {
+      if (entriesBuilder_ == null) {
+        return entries_.get(index);  } else {
+        return entriesBuilder_.getMessageOrBuilder(index);
+      }
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public java.util.List<? extends com.ele.raft.EntryOrBuilder> 
+         getEntriesOrBuilderList() {
+      if (entriesBuilder_ != null) {
+        return entriesBuilder_.getMessageOrBuilderList();
+      } else {
+        return java.util.Collections.unmodifiableList(entries_);
+      }
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public com.ele.raft.Entry.Builder addEntriesBuilder() {
+      return getEntriesFieldBuilder().addBuilder(
+          com.ele.raft.Entry.getDefaultInstance());
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public com.ele.raft.Entry.Builder addEntriesBuilder(
+        int index) {
+      return getEntriesFieldBuilder().addBuilder(
+          index, com.ele.raft.Entry.getDefaultInstance());
+    }
+    /**
+     * <code>repeated .raft.Entry entries = 5;</code>
+     */
+    public java.util.List<com.ele.raft.Entry.Builder> 
+         getEntriesBuilderList() {
+      return getEntriesFieldBuilder().getBuilderList();
+    }
+    private com.google.protobuf.RepeatedFieldBuilderV3<
+        com.ele.raft.Entry, com.ele.raft.Entry.Builder, com.ele.raft.EntryOrBuilder> 
+        getEntriesFieldBuilder() {
+      if (entriesBuilder_ == null) {
+        entriesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+            com.ele.raft.Entry, com.ele.raft.Entry.Builder, com.ele.raft.EntryOrBuilder>(
+                entries_,
+                ((bitField0_ & 0x00000010) == 0x00000010),
+                getParentForChildren(),
+                isClean());
+        entries_ = null;
+      }
+      return entriesBuilder_;
     }
 
     private int leaderCommit_ ;
