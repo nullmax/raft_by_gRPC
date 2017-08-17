@@ -134,7 +134,7 @@ public class Log {
         indexCacheDirty = true;
         termCacheDirty = true;
 
-        if (this.recentAppended.size() >= 50) {
+        if (this.recentAppended.size() >= 5001) {
             this.recentAppended.removeFirst();
         }
         this.recentAppended.add(commandId);
@@ -147,7 +147,7 @@ public class Log {
                 String sql = "INSERT INTO " + name + " VALUES (" + logEntry.term + "," + logEntry.logIndex + "," + logEntry.commandId + ",\'" + logEntry.command + "\')";
                 DBConnector.update(sql);
                 updateFlag = true;
-                if (this.recentStored.size() >= 500) {
+                if (this.recentStored.size() >= 5001) {
                     this.recentStored.removeFirst();
                 }
                 this.recentStored.add(logEntry.commandId);
@@ -177,7 +177,7 @@ public class Log {
         if (recentAppended.contains(commandId))
             return true;
 
-        if (this.recentAppended.size() >= 250) {
+        if (this.recentAppended.size() >= 5001) {
             this.recentAppended.removeFirst();
         }
         this.recentAppended.add(commandId);

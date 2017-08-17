@@ -4,6 +4,7 @@ import com.ele.io.ClientRequest;
 import com.ele.io.ResultUnit;
 import com.ele.io.RpcIOGrpc;
 import com.ele.io.ServerReply;
+import com.ele.util.DBConnector;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -53,7 +54,7 @@ public class CommonClient {
     }
 
     public void commandServer(String command) {
-        logger.info("Send \"" + command + "\" to server");
+//        logger.info("Send \"" + command + "\" to server");
         ClientRequest.Builder builder = ClientRequest.newBuilder();
         builder.setCommand(command);
         builder.setCommandId(commandId.incrementAndGet());
@@ -72,11 +73,16 @@ public class CommonClient {
                 setChannel(response.getRedirectAddress(), response.getRedirectPort());
             }
         } while (!response.getSuccess());
-        logger.info("Result from server: success");
+//        logger.info("Result from server: success");
+    }
+
+    public void dbTest(String command) {
+//        logger.info("Result from DB: " + DBConnector.update(command));
+        DBConnector.update(command);
     }
 
     public void queryServer(String query) {
-        logger.info("Send \"" + query + "\" to server");
+//        logger.info("Send \"" + query + "\" to server");
         ClientRequest.Builder builder = ClientRequest.newBuilder();
         builder.setCommand(query);
         ClientRequest request = builder.build();
