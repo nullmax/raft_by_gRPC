@@ -45,17 +45,17 @@ public class RaftServer {
     /*raft协议用到的成员*/
     private int leaderId;
     //所有Server上的固有状态
-    AtomicInteger currentTerm;
-    int votedFor;
-    Log logs;
+    private AtomicInteger currentTerm;
+    private int votedFor;
+    private Log logs;
     //所有Server上的变化状态
 //    int commitIndex;
 //    int lastApplied;  已经包含在logs中了
 
-    int voteCount;
+    private int voteCount;
     //Leader上的变化状态
-    int[] nextIndex;
-    int[] matchIndex;
+    private int[] nextIndex;
+    private int[] matchIndex;
 
 
     private ConcurrentHashMap<Integer, AtomicInteger> commandLock = new ConcurrentHashMap<Integer, AtomicInteger>();
@@ -65,8 +65,12 @@ public class RaftServer {
     private ArrayList<Integer> portList;
 
 
+    // 和其他服务通信的频道和存根
     private ManagedChannel[] channels;
     private ConsensusGrpc.ConsensusBlockingStub blockingStubs[];
+
+    //选举计数，当多次未收到heartbeat包才开始选举
+    private AtomicInteger timeoutCount;
 
     /**
      * @param port 服务器端口号
@@ -132,16 +136,13 @@ public class RaftServer {
                 syncLogTasks[i] = new SyncLogTask(i);
                 timers[i] = new Timer();
                 // todo 间隔
-                timers[i].scheduleAtFixedRate(syncLogTasks[i], 0, 100);
+                timers[i].scheduleAtFixedRate(syncLogTasks[i], 0, 10);
 //                timers[i].scheduleAtFixedRate(syncLogTasks[i], 0, 20);
             }
         }
 //        todo 自己下台
 //        timer.schedule(new SelfStepDown(), 5000);   //5秒后自己下台
-        //todo 目前只有leader能够apply
-        applyTask = new ApplyTask();
-//        timers[serverId].scheduleAtFixedRate(applyTask, 150, 150);
-        timers[serverId].scheduleAtFixedRate(applyTask, 10, 10);
+
     }
 
     private synchronized void resetTimeout() {
@@ -152,6 +153,7 @@ public class RaftServer {
     }
 
     private synchronized void startTimeout() {
+        timeoutCount = new AtomicInteger(5);    // 初始值要不小于timeout的次数
         timeout = random.nextInt(1000) + 1000;
         electionTask = new ElectionTask();
         timers[serverId].schedule(electionTask, timeout);
@@ -164,7 +166,10 @@ public class RaftServer {
         server = serverBuilder.build();
 
         commitTask = new CommitTask();
+        applyTask = new ApplyTask();
+
         timers[serverId].schedule(commitTask, 20 * 1000, 20 * 1000);
+        timers[serverId].scheduleAtFixedRate(applyTask, 5, 5);
 
         server.start();
         startTimeout();     //开始进行投票倒计时
@@ -230,6 +235,7 @@ public class RaftServer {
                     if (response.getTerm() > currentTerm.get()) {
                         status.set(FOLLOWER);
                         currentTerm.set(response.getTerm());
+                        timeoutCount.set(0);    // 重置计数
                         resetTimeout();
                     }
                 }
@@ -283,7 +289,7 @@ public class RaftServer {
             }
             builder.setLeaderCommit(logs.commitIndex);
             // todo 阈值
-            for (int i = nextIndex[sid], j = 0; j < 10 && i <= logs.getLastIndex(); ++i, ++j) {
+            for (int i = nextIndex[sid], j = 0; j < 5 && i <= logs.getLastIndex(); ++i, ++j) {
                 builder.addEntries(logToEntry(logs.getLogByIndex(i)));
             }
         }
@@ -306,6 +312,7 @@ public class RaftServer {
                             stepDown("higher term");   //Leader下台
                         else
                             stepDown("newer logs");   //Leader下台
+                        timeoutCount.set(0);    // 重置计数
                         resetTimeout();
                         currentTerm.set(response.getTerm());   //更新term
                     } else {
@@ -345,6 +352,7 @@ public class RaftServer {
                     votedFor = request.getCandidateId();
                     currentTerm.set(request.getTerm());
                     builder.setVoteGranted(true);
+                    timeoutCount.set(0);    // 重置计数
                     resetTimeout();
                     stepDown("other candidate");
                 } else
@@ -357,6 +365,7 @@ public class RaftServer {
                     votedFor = request.getCandidateId();
                     currentTerm.set(request.getTerm());
                     status.set(FOLLOWER);
+                    timeoutCount.set(0);    // 重置计数
                     resetTimeout();
                     builder.setVoteGranted(true);
                 } else
@@ -364,6 +373,7 @@ public class RaftServer {
             }
             // Follower处理
             else {
+                timeoutCount.set(0);    // 重置计数
                 resetTimeout(); //重置选举计时器
                 if (request.getTerm() < currentTerm.get()) {
                     builder.setVoteGranted(false);
@@ -373,7 +383,6 @@ public class RaftServer {
                                 || request.getLatLogTerm() == logs.getLastTerm() && request.getLastLogIndex() >= logs.getLastIndex()) {
                             votedFor = request.getCandidateId();
                             currentTerm.set(request.getTerm());
-                            resetTimeout();
                             builder.setVoteGranted(true);
                         } else {
                             builder.setVoteGranted(false);
@@ -400,6 +409,7 @@ public class RaftServer {
                         request.getTerm() == currentTerm.get() && request.getLeaderCommit() >= logs.commitIndex) {     //Leader下台
                     status.set(FOLLOWER);
                     stepDown("other leader");
+                    timeoutCount.set(0);    // 重置计数
                     resetTimeout();
 
                     currentTerm.set(request.getTerm());
@@ -414,7 +424,6 @@ public class RaftServer {
                             // 删除同步起始点及之后目录
                             logs.deleteLogEntry(request.getPrevLogIndex() + 1);
                             // 复制日志
-                            getRPC(leaderId);
                             Entry entry;
                             for (int i = 0; i < entriesCount; ++i) {
                                 entry = request.getEntries(i);
@@ -431,7 +440,6 @@ public class RaftServer {
                             if (logs.getLastIndex() > request.getPrevLogIndex()) {
                                 builder.setSuccess(false);  //记录不如Follower新，下台
                                 builder.setStepDown(true);
-                                electionTask.run(); //todo ??
                             } else {
                                 builder.setSuccess(true);
                                 builder.setMatchIndex(logs.getLastIndex());
@@ -457,6 +465,7 @@ public class RaftServer {
             // 其他处理
             else {
                 if (request.getTerm() >= currentTerm.get()) {
+                    timeoutCount.set(0);    // 重置计数
                     resetTimeout();
                     currentTerm.set(request.getTerm());
                     leaderId = request.getLeaderId();
@@ -470,7 +479,6 @@ public class RaftServer {
                             // 删除同步起始点及之后目录
                             logs.deleteLogEntry(request.getPrevLogIndex() + 1);
                             // 复制日志
-                            getRPC(leaderId);
                             Entry entry;
                             for (int i = 0; i < entriesCount; ++i) {
                                 entry = request.getEntries(i);
@@ -558,6 +566,7 @@ public class RaftServer {
                     }
 
                     builder.setSuccess(waitLock.get(request.getCommandId()).get());
+                    waitLock.remove(request.getCommandId());
                 }
                 builder.setRedirect(false);
             }
@@ -593,6 +602,13 @@ public class RaftServer {
     class ElectionTask extends TimerTask {
         @Override
         public void run() {
+
+            // TODO 选举计数
+            if (timeoutCount.incrementAndGet() < 5) {
+                resetTimeout();
+                return;
+            }
+
             status.set(CANDIDATE);
             //startElection
             timers[serverId].schedule(new ElectionTimeout(), 150);
@@ -653,6 +669,7 @@ public class RaftServer {
         @Override
         public void run() {
             logs.storeLog();
+            logs.clearLog();
         }
     }
 
@@ -661,10 +678,13 @@ public class RaftServer {
         public void run() {
             while (logs.appliedIndex < logs.commitIndex) {
                 LogEntry logEntry = logs.getLogByIndex(++logs.appliedIndex);
-                waitLock.get(logEntry.commandId).set(DBConnector.update(logEntry.command));
-                //todo 待优化
-                synchronized (waitLock.get(logEntry.commandId)) {
-                    waitLock.get(logEntry.commandId).notify();
+                if (status.get() == LEADER) {
+                    // 只有Leader真正写入
+                    waitLock.get(logEntry.commandId).set(DBConnector.update(logEntry.command));
+                    //todo 待优化
+                    synchronized (waitLock.get(logEntry.commandId)) {
+                        waitLock.get(logEntry.commandId).notify();
+                    }
                 }
             }
         }

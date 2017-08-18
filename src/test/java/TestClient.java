@@ -18,7 +18,7 @@ public class TestClient {
         for (int i = 0; i < 5; ++i)
             clients[i] = new CommonClient("localhost", 5500);
 
-        for (int i = 0; i < 10; ++i)
+        for (int i = 0; i < 11; ++i)
             multiTest();
     }
 

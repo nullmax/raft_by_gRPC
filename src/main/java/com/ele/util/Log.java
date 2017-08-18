@@ -8,7 +8,6 @@ import java.util.Map;
 public class Log {
     private LinkedList<LogEntry> logEntries;    //for local state machine
     private LinkedList<Integer> recentAppended;  //最近添加的日志，防止client未得到响应时重复提交
-    private LinkedList<Integer> recentStored;
 
     private String name;
 
@@ -20,12 +19,13 @@ public class Log {
     public int commitIndex;
     public int appliedIndex;
 
+    private int storedLogIndex;
+
     public Log(int id) {
         buildLog(id);
         name = "log" + id;
         logEntries = new LinkedList<LogEntry>();
         recentAppended = new LinkedList<Integer>();
-        recentStored = new LinkedList<Integer>();
 
         getLastIndex();
         getLastTerm();
@@ -33,6 +33,7 @@ public class Log {
         commitIndex = lastIndexCache;
         appliedIndex = commitIndex;
 
+        storedLogIndex = getLastIndex();
         int temp = lastIndexCache - 10;
         getRecentAppended(temp);
     }
@@ -142,16 +143,11 @@ public class Log {
 
     public synchronized void storeLog() {
         boolean updateFlag = false;
-        for (LogEntry logEntry : logEntries) {
-            if (!checkStoredBefore(logEntry.commandId)) {
-                String sql = "INSERT INTO " + name + " VALUES (" + logEntry.term + "," + logEntry.logIndex + "," + logEntry.commandId + ",\'" + logEntry.command + "\')";
-                DBConnector.update(sql);
-                updateFlag = true;
-                if (this.recentStored.size() >= 5001) {
-                    this.recentStored.removeFirst();
-                }
-                this.recentStored.add(logEntry.commandId);
-            }
+        while (storedLogIndex < getLastIndex()) {
+            LogEntry logEntry = getLogByIndex(++storedLogIndex);
+            String sql = "INSERT INTO " + name + " VALUES (" + logEntry.term + "," + logEntry.logIndex + "," + logEntry.commandId + ",\'" + logEntry.command + "\')";
+            DBConnector.update(sql);
+            updateFlag = true;
         }
 
         if (updateFlag) {
@@ -162,38 +158,20 @@ public class Log {
     public synchronized void clearLog() {
         Iterator<LogEntry> it = logEntries.iterator();
         while (it.hasNext()) {
-            if (it.next().logIndex < appliedIndex / 2) {
+            if (it.next().logIndex < appliedIndex - 100) {
                 it.remove();
-            }
+            } else
+                break;
         }
     }
 
     public boolean checkAppliedBefore(int commandId) {
-//        for (int cmdId : this.recentAppended) {
-//            if (cmdId == commandId) {
-//                return true;
-//            }
-//        }
         if (recentAppended.contains(commandId))
             return true;
 
         if (this.recentAppended.size() >= 5001) {
             this.recentAppended.removeFirst();
         }
-        this.recentAppended.add(commandId);
-        return false;
-    }
-
-    public boolean checkStoredBefore(int commandId) {
-        for (int cmdId : this.recentStored) {
-            if (cmdId == commandId) {
-                return true;
-            }
-        }
-//        if (this.recentStored.size() >= 50) {
-//            this.recentStored.removeFirst();
-//        }
-//        this.recentStored.add(commandId);
         return false;
     }
 }
