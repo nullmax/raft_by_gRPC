@@ -14,6 +14,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.logging.Logger;
 
 public class CommonServer {
@@ -22,8 +24,17 @@ public class CommonServer {
     private Server server;
     private int port;
 
+    private ConcurrentLinkedDeque<Integer> commandIdList;
+    private ConcurrentHashMap<Integer, ClientRequest> requestConcurrentHashMap;
+    private ConcurrentHashMap<Integer, StreamObserver<ServerReply>> observerConcurrentHashMap;
+    private final ResponseThread responseThread;
+
     CommonServer(int port) {
         this.port = port;
+        responseThread = new ResponseThread();
+        commandIdList = new ConcurrentLinkedDeque<Integer>();
+        requestConcurrentHashMap = new ConcurrentHashMap<Integer, ClientRequest>();
+        observerConcurrentHashMap = new ConcurrentHashMap<Integer, StreamObserver<ServerReply>>();
     }
 
     public static void main(String[] args) throws Exception {
@@ -33,13 +44,13 @@ public class CommonServer {
     }
 
     public void start() throws IOException {
+
         ServerBuilder serverBuilder = ServerBuilder.forPort(port);
         serverBuilder.addService(new CommonServer.IOService());
         server = serverBuilder.build();
 
-
+//        responseThread.start();
         server.start();
-
 
         logger.info("Server started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -68,7 +79,17 @@ public class CommonServer {
 
         private Collection<ResultUnit> queryResults;
 
-        @Override
+//        @Override
+//        public void command(ClientRequest request, StreamObserver<ServerReply> responseObserver) {
+//            commandIdList.add(request.getCommandId());
+//            requestConcurrentHashMap.put(request.getCommandId(), request);
+//            observerConcurrentHashMap.put(request.getCommandId(), responseObserver);
+//
+//            synchronized (responseThread) {
+//                responseThread.notify();
+//            }
+//        }
+                @Override
         public void command(ClientRequest request,
                             StreamObserver<ServerReply> responseObserver) {
             ServerReply.Builder builder = ServerReply.newBuilder();
@@ -100,6 +121,36 @@ public class CommonServer {
             for (ResultUnit resultUnit : queryResults)
                 responseObserver.onNext(resultUnit);
             responseObserver.onCompleted();
+        }
+    }
+
+    class ResponseThread extends Thread {
+        @Override
+        public void run() {
+            int commandId;
+            while (true) {
+
+                if (commandIdList.isEmpty()) {
+                    synchronized (this) {
+                        try {
+                            this.wait();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+
+                commandId = commandIdList.pollFirst();
+                ServerReply.Builder builder = ServerReply.newBuilder();
+                builder.setSuccess(DBConnector.update(requestConcurrentHashMap.get(commandId).getCommand()));
+                builder.setRedirect(false);
+
+                observerConcurrentHashMap.get(commandId).onNext(builder.build());
+                observerConcurrentHashMap.get(commandId).onCompleted();
+
+                requestConcurrentHashMap.remove(commandId);
+                observerConcurrentHashMap.remove(commandId);
+            }
         }
     }
 }

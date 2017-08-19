@@ -21,6 +21,7 @@ public class CommonClient {
 
     private ManagedChannel channel;
     private RpcIOGrpc.RpcIOBlockingStub blockingStub;
+    private RpcIOGrpc.RpcIOStub asyncStub;
 
     private static AtomicInteger commandId = new AtomicInteger(0);
     private static AtomicInteger clientCount = new AtomicInteger(0);
@@ -30,6 +31,7 @@ public class CommonClient {
     CommonClient(ManagedChannel channel) {
         this.channel = channel;
         blockingStub = RpcIOGrpc.newBlockingStub(channel);
+        asyncStub = RpcIOGrpc.newStub(channel);
     }
 
     public CommonClient(String host, int port) {
@@ -54,7 +56,7 @@ public class CommonClient {
     }
 
     public void commandServer(String command) {
-//        logger.info("Send \"" + command + "\" to server");
+        logger.info("Send \"" + command + "\" to server");
         ClientRequest.Builder builder = ClientRequest.newBuilder();
         builder.setCommand(command);
         builder.setCommandId(commandId.incrementAndGet());
@@ -64,8 +66,11 @@ public class CommonClient {
 
         do {
             try {
+                //todo 阻塞传输
                 response = blockingStub.command(request);
+//                response=asyncStub.command(request);
             } catch (StatusRuntimeException e) {
+
                 logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
                 return;
             }
@@ -73,7 +78,7 @@ public class CommonClient {
                 setChannel(response.getRedirectAddress(), response.getRedirectPort());
             }
         } while (!response.getSuccess());
-//        logger.info("Result from server: success");
+        logger.info("Result from server: success");
     }
 
     public void dbTest(String command) {
