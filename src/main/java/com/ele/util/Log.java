@@ -60,6 +60,13 @@ public class Log {
         }
     }
 
+    public synchronized void getAppliedIndex() {
+        String queryString = "SELECT count(*) AS lastIndex FROM " + "simple";
+        Object o = DBConnector.get(queryString).get(0).get("lastIndex");
+        long Index = (o == null) ? 0 : (Long) o; //不能直接转成Integer
+        appliedIndex = (int) Index;
+    }
+
     public synchronized int getLastIndex() {
         if (indexCacheDirty) {
             if (logEntries.isEmpty()) {

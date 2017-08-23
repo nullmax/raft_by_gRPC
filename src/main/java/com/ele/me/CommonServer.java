@@ -49,7 +49,7 @@ public class CommonServer {
         serverBuilder.addService(new CommonServer.IOService());
         server = serverBuilder.build();
 
-//        responseThread.start();
+        responseThread.start();
         server.start();
 
         logger.info("Server started, listening on " + port);
@@ -79,27 +79,29 @@ public class CommonServer {
 
         private Collection<ResultUnit> queryResults;
 
-//        @Override
-//        public void command(ClientRequest request, StreamObserver<ServerReply> responseObserver) {
-//            commandIdList.add(request.getCommandId());
-//            requestConcurrentHashMap.put(request.getCommandId(), request);
-//            observerConcurrentHashMap.put(request.getCommandId(), responseObserver);
-//
-//            synchronized (responseThread) {
-//                responseThread.notify();
-//            }
-//        }
-                @Override
-        public void command(ClientRequest request,
-                            StreamObserver<ServerReply> responseObserver) {
-            ServerReply.Builder builder = ServerReply.newBuilder();
-            builder.setSuccess(DBConnector.update(request.getCommand()));
-            builder.setRedirect(false);
+        @Override
+        public void command(ClientRequest request, StreamObserver<ServerReply> responseObserver) {
+            logger.info("receive: " + request.getCommand() + ", id:" + request.getCommandId());
+            commandIdList.add(request.getCommandId());
+            requestConcurrentHashMap.put(request.getCommandId(), request);
+            observerConcurrentHashMap.put(request.getCommandId(), responseObserver);
 
-            ServerReply reply = builder.build();
-            responseObserver.onNext(reply);
-            responseObserver.onCompleted();
+            synchronized (responseThread) {
+                responseThread.notify();
+            }
         }
+
+//        @Override
+//        public void command(ClientRequest request,
+//                            StreamObserver<ServerReply> responseObserver) {
+//            ServerReply.Builder builder = ServerReply.newBuilder();
+//            builder.setSuccess(DBConnector.update(request.getCommand()));
+//            builder.setRedirect(false);
+//
+//            ServerReply reply = builder.build();
+//            responseObserver.onNext(reply);
+//            responseObserver.onCompleted();
+//        }
 
         private void getQueryResult(String sql) {
             queryResults = new LinkedList<ResultUnit>();
@@ -139,7 +141,6 @@ public class CommonServer {
                         }
                     }
                 }
-
                 commandId = commandIdList.pollFirst();
                 ServerReply.Builder builder = ServerReply.newBuilder();
                 builder.setSuccess(DBConnector.update(requestConcurrentHashMap.get(commandId).getCommand()));

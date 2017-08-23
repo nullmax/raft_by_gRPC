@@ -8,34 +8,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class TestClient {
-
-    static AtomicInteger index = new AtomicInteger(0);
-    static CommonClient[] clients = new CommonClient[5];
+    private static final int N = 10;
+    private static CommonClient[] clients = new CommonClient[N];
 
     public static void main(String[] args) throws Exception {
-//        singleTest();
-
-        for (int i = 0; i < 5; ++i)
+        for (int i = 0; i < N; ++i)
             clients[i] = new CommonClient("localhost", 5500);
 
-        for (int i = 0; i < 11; ++i)
+        for (int i = 0; i < 10; ++i)
             multiTest();
     }
 
-
-    public static String getCommand(int id, int v) {
-        return "INSERT INTO simple VALUES (" + id + "," + v + ")";
-    }
-
     public static long multiTest() throws Exception {
+        ClientThread[] clientThreads = new ClientThread[N];
+        CountDownLatch latch = new CountDownLatch(N);
+        final CountDownLatch finishLatch = new CountDownLatch(500);
         long beginTime = System.currentTimeMillis();
-        ClientThread[] clientThreads = new ClientThread[5];
-
-        CountDownLatch latch = new CountDownLatch(5);
-        for (int i = 0; i < 5; ++i) {
-            clientThreads[i] = new ClientThread(clients[i], latch);
+        for (int i = 0; i < N; ++i) {
+            clientThreads[i] = new ClientThread(clients[i], latch, finishLatch);
             clientThreads[i].start();
         }
+//        finishLatch.await();
         latch.await();
         long total = System.currentTimeMillis() - beginTime;
         System.out.println("Total time:" + total);

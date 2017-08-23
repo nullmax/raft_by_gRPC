@@ -8,17 +8,21 @@ public class ClientThread extends Thread {
 
     private CommonClient client;
     private CountDownLatch latch;
+    private final CountDownLatch finishLatch;
 
-    public ClientThread(CommonClient client, CountDownLatch latch) {
+    public ClientThread(CommonClient client, CountDownLatch latch, CountDownLatch finishLatch) {
         this.client = client;
         this.latch = latch;
+        this.finishLatch = finishLatch;
     }
 
     @Override
     public void run() {
         String command;
-        for (int j = 0; j < 100; ++j) { //todo 总数暂时不要超过500
+
+        for (int j = 0; j < 50; ++j) {
             command = getCommand(index.getAndIncrement(), client.id);
+//            client.asyncCommandServer(command, finishLatch);
             client.commandServer(command);
 //            client.dbTest(command);
         }

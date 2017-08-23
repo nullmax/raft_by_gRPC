@@ -7,9 +7,12 @@ import com.ele.io.ServerReply;
 import com.ele.util.DBConnector;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
 
 import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -56,29 +59,66 @@ public class CommonClient {
     }
 
     public void commandServer(String command) {
-        logger.info("Send \"" + command + "\" to server");
+//        logger.info("Send \"" + command + "\" to server");
         ClientRequest.Builder builder = ClientRequest.newBuilder();
         builder.setCommand(command);
         builder.setCommandId(commandId.incrementAndGet());
 
         ClientRequest request = builder.build();
-        ServerReply response;
+        ServerReply response = null;
 
         do {
             try {
-                //todo 阻塞传输
-                response = blockingStub.command(request);
-//                response=asyncStub.command(request);
+                response = blockingStub.withDeadlineAfter(10, TimeUnit.SECONDS).command(request);
+                if (response.getRedirect()) {
+                    setChannel(response.getRedirectAddress(), response.getRedirectPort());
+                }
             } catch (StatusRuntimeException e) {
-
                 logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+                if (e.getStatus().getCode() == Status.Code.DEADLINE_EXCEEDED) {
+                    System.out.println(response);
+                    continue;
+                }
                 return;
             }
-            if (response.getRedirect()) {
-                setChannel(response.getRedirectAddress(), response.getRedirectPort());
+        } while (response == null || !response.getSuccess());
+//        logger.info("Result from server: success");
+    }
+
+    public void asyncCommandServer(String command, CountDownLatch finishLatch) {
+//        logger.info("Send \"" + command + "\" to server");
+        ClientRequest.Builder builder = ClientRequest.newBuilder();
+        builder.setCommand(command);
+        builder.setCommandId(commandId.incrementAndGet());
+
+        ClientRequest request = builder.build();
+        StreamObserver<ServerReply> responseObserver = new StreamObserver<ServerReply>() {
+            @Override
+            public void onNext(ServerReply value) {
+//                logger.info("The result of \'" + command + "\' from server:" + value.getSuccess());
+                if (value.getRedirect()) {
+                    setChannel(value.getRedirectAddress(), value.getRedirectPort());
+                    //todo 重发
+                }
             }
-        } while (!response.getSuccess());
-        logger.info("Result from server: success");
+
+            @Override
+            public void onError(Throwable t) {
+                logger.log(Level.WARNING, "RPC failed: {0}", t.getMessage());
+                finishLatch.countDown();
+            }
+
+            @Override
+            public void onCompleted() {
+                finishLatch.countDown();
+            }
+        };
+        try {
+            // 非阻塞传输
+            asyncStub.command(request, responseObserver);
+        } catch (StatusRuntimeException e) {
+            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+        }
     }
 
     public void dbTest(String command) {
@@ -87,7 +127,7 @@ public class CommonClient {
     }
 
     public void queryServer(String query) {
-//        logger.info("Send \"" + query + "\" to server");
+        logger.info("Send \"" + query + "\" to server");
         ClientRequest.Builder builder = ClientRequest.newBuilder();
         builder.setCommand(query);
         ClientRequest request = builder.build();
@@ -106,16 +146,28 @@ public class CommonClient {
     }
 
     public static void main(String[] args) throws Exception {
-        CommonClient client = new CommonClient("localhost", 5001);
+        CommonClient client = new CommonClient("localhost", 5500);
+//        try {
+//            String command = "DELETE FROM simple";
+//            client.commandServer(command);
+//            command = "INSERT INTO simple VALUES (1, 9)";
+//            client.commandServer(command);
+//            command = "INSERT INTO simple VALUES (2, 8)";
+//            client.commandServer(command);
+//            String query = "SELECT * FROM simple";
+//            client.queryServer(query);
+//        } finally {
+//            client.shutdown();
+//        }
         try {
+            final CountDownLatch finishLatch = new CountDownLatch(3);
             String command = "DELETE FROM simple";
-            client.commandServer(command);
+            client.asyncCommandServer(command, finishLatch);
             command = "INSERT INTO simple VALUES (1, 9)";
-            client.commandServer(command);
+            client.asyncCommandServer(command, finishLatch);
             command = "INSERT INTO simple VALUES (2, 8)";
-            client.commandServer(command);
-            String query = "SELECT * FROM simple";
-            client.queryServer(query);
+            client.asyncCommandServer(command, finishLatch);
+            finishLatch.await();
         } finally {
             client.shutdown();
         }
