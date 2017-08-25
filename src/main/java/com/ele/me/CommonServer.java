@@ -81,13 +81,19 @@ public class CommonServer {
 
         @Override
         public void command(ClientRequest request, StreamObserver<ServerReply> responseObserver) {
+            boolean syncFlag = false;
+            if (commandIdList.isEmpty())
+                syncFlag = true;
+
             logger.info("receive: " + request.getCommand() + ", id:" + request.getCommandId());
             commandIdList.add(request.getCommandId());
             requestConcurrentHashMap.put(request.getCommandId(), request);
             observerConcurrentHashMap.put(request.getCommandId(), responseObserver);
 
-            synchronized (responseThread) {
-                responseThread.notify();
+            if (syncFlag) {
+                synchronized (responseThread) {
+                    responseThread.notify();
+                }
             }
         }
 

@@ -135,14 +135,13 @@ public class RaftServer {
         }
 
         logs.getAppliedIndex();
-//        System.out.println(logs.appliedIndex + ", " + logs.commitIndex);
+
         for (int i = 0; i < serverCount; ++i) {
             if (i != serverId) {
                 syncLogTasks[i] = new SyncLogTask(i);
                 timers[i] = new Timer();
                 // todo 间隔
                 timers[i].scheduleAtFixedRate(syncLogTasks[i], 0, 10);
-//                timers[i].scheduleAtFixedRate(syncLogTasks[i], 0, 20);
             }
         }
 //         todo 自己下台
@@ -215,7 +214,6 @@ public class RaftServer {
         status.set(FOLLOWER);
         voteCount = 0;
         votedFor = -1;
-        applyTask.cancel();
         for (int i = 0; i < serverCount; ++i) {
             if (i != serverId && timers[i] != null) {
                 timers[i].cancel();
@@ -257,6 +255,7 @@ public class RaftServer {
 
     private void setCommitIndex(int start, int end) {
         int commandId;
+//        System.out.println(start + ", " + end + ", " + logs.appliedIndex + ", " + logs.commitIndex + ", " + observerConcurrentHashMap.size());
         for (int i = start; i <= end; ++i) {
             //todo NPE
             try {
@@ -313,7 +312,7 @@ public class RaftServer {
             //deal with reply
             if (status.compareAndSet(LEADER, LEADER)) {
                 if (response.getSuccess()) {
-                    setCommitIndex(nextIndex[sid], response.getMatchIndex());
+                    setCommitIndex(logs.commitIndex, response.getMatchIndex());
                     matchIndex[sid] = response.getMatchIndex();
                     nextIndex[sid] = response.getMatchIndex() + 1;
                 } else {
@@ -560,15 +559,7 @@ public class RaftServer {
                 responseObserver.onCompleted();
             } else {
                 if (logs.checkAppliedBefore(request.getCommandId())) {
-
-                    if (observerConcurrentHashMap.get(request.getCommandId()) != null) {
-                        observerConcurrentHashMap.remove(request.getCommandId());   // todo 删除过期链接
-                    }
-                    ServerReply.Builder builder = ServerReply.newBuilder();
-                    builder.setSuccess(true);
-                    builder.setRedirect(false);
-                    responseObserver.onNext(builder.build());
-                    responseObserver.onCompleted();
+                    observerConcurrentHashMap.put(request.getCommandId(), responseObserver); // 更新responseObserver
                 } else {
                     logs.addLogEntry(currentTerm.get(), request.getCommand(), request.getCommandId());
                     commandLock.put(request.getCommandId(), new AtomicInteger(0));
@@ -607,7 +598,7 @@ public class RaftServer {
         public void run() {
 
             // TODO 选举计数
-            if (timeoutCount.incrementAndGet() < 5) {
+            if (timeoutCount.incrementAndGet() < 1) {
                 resetTimeout();
                 return;
             }

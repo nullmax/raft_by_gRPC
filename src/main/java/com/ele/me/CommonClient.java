@@ -51,7 +51,7 @@ public class CommonClient {
                 .usePlaintext(true)
                 .build();
         blockingStub = RpcIOGrpc.newBlockingStub(channel);
-        logger.info("redirect to:" + address + ":" + port);
+//        logger.info("redirect to:" + address + ":" + port);
     }
 
     public void shutdown() throws InterruptedException {
@@ -74,11 +74,10 @@ public class CommonClient {
                     setChannel(response.getRedirectAddress(), response.getRedirectPort());
                 }
             } catch (StatusRuntimeException e) {
-                logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
                 if (e.getStatus().getCode() == Status.Code.DEADLINE_EXCEEDED) {
-                    System.out.println(response);
                     continue;
                 }
+                logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
                 return;
             }
         } while (response == null || !response.getSuccess());

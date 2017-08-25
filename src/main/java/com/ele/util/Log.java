@@ -143,7 +143,7 @@ public class Log {
         termCacheDirty = true;
 
         if (this.recentAppended.size() >= 5001) {
-            this.recentAppended.removeFirst();
+            this.recentAppended.pollFirst();
         }
         this.recentAppended.add(commandId);
     }
@@ -175,10 +175,6 @@ public class Log {
     public boolean checkAppliedBefore(int commandId) {
         if (recentAppended.contains(commandId))
             return true;
-
-        if (this.recentAppended.size() >= 5001) {
-            this.recentAppended.removeFirst();
-        }
         return false;
     }
 }
