@@ -19,6 +19,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class RaftServer {
+    //用来测试两次选举之间的时间
+    private static long leadTime;
+    private static long crashTime;
     private static int serverCount = 0;
     private static final Logger logger = Logger.getLogger(RaftServer.class.getName());
 
@@ -47,7 +50,7 @@ public class RaftServer {
     //所有Server上的固有状态
     private AtomicInteger currentTerm;
     private int votedFor;
-    private final Log logs;
+        private final Log logs;
     //所有Server上的变化状态
 
 //    int commitIndex;
@@ -126,6 +129,8 @@ public class RaftServer {
     }
 
     private synchronized void initLeader(int serverNum) {
+        leadTime = System.currentTimeMillis();
+//        System.out.println("选举间隔：" + (leadTime - crashTime));
         status.set(LEADER);
         leaderId = serverId;
 
@@ -144,21 +149,21 @@ public class RaftServer {
                 timers[i].scheduleAtFixedRate(syncLogTasks[i], 0, 10);
             }
         }
-//         todo 自己下台
+        // todo 自己下台
 //        timer.schedule(new SelfStepDown(), 5000);   //5秒后自己下台
 
     }
 
     private synchronized void resetTimeout() {
         electionTask.cancel();
-        timeout = random.nextInt(500) + 1000;
+        timeout = random.nextInt(500) + 500;
         electionTask = new ElectionTask();
         timers[serverId].schedule(electionTask, timeout);
     }
 
     private synchronized void startTimeout() {
         timeoutCount = new AtomicInteger(5);    // 初始值要不小于timeout的次数
-        timeout = random.nextInt(500) + 1000;
+        timeout = random.nextInt(500) + 500;
         electionTask = new ElectionTask();
         timers[serverId].schedule(electionTask, timeout);
     }
@@ -172,7 +177,7 @@ public class RaftServer {
         commitTask = new CommitTask();
         applyTask = new ApplyTask();
 
-        timers[serverId].schedule(commitTask, 20 * 1000, 20 * 1000);
+        timers[serverId].schedule(commitTask,  1000, 1000);
         timers[serverId].scheduleAtFixedRate(applyTask, 5, 5);
 
         server.start();
@@ -211,6 +216,7 @@ public class RaftServer {
      */
 
     private void stepDown(String reason) {
+        crashTime = System.currentTimeMillis();
         status.set(FOLLOWER);
         voteCount = 0;
         votedFor = -1;
@@ -250,7 +256,6 @@ public class RaftServer {
         } catch (StatusRuntimeException e) {
             logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
         }
-
     }
 
     private void setCommitIndex(int start, int end) {
@@ -534,7 +539,7 @@ public class RaftServer {
         }
     }
 
-    //todo 删除
+    // todo 删除
     private void displayNextIndex() {
         for (int i = 0; i < serverCount; ++i)
             System.out.print(nextIndex[i] + " ");

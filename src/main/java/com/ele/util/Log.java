@@ -60,7 +60,7 @@ public class Log {
         }
     }
 
-    public synchronized void getAppliedIndex() {
+    public void getAppliedIndex() {
         String queryString = "SELECT count(*) AS lastIndex FROM " + "simple";
         Object o = DBConnector.get(queryString).get(0).get("lastIndex");
         long Index = (o == null) ? 0 : (Long) o; //不能直接转成Integer
@@ -149,23 +149,20 @@ public class Log {
     }
 
     public synchronized void storeLog() {
-        boolean updateFlag = false;
-        while (storedLogIndex < getLastIndex()) {
+        int counter = 0;
+        while (counter < 100 && storedLogIndex < getLastIndex()) {
             LogEntry logEntry = getLogByIndex(++storedLogIndex);
             String sql = "INSERT INTO " + name + " VALUES (" + logEntry.term + "," + logEntry.logIndex + "," + logEntry.commandId + ",\'" + logEntry.command + "\')";
             DBConnector.update(sql);
-            updateFlag = true;
-        }
-
-        if (updateFlag) {
-            System.out.println(name + " updated!");
+            ++counter;
         }
     }
 
     public synchronized void clearLog() {
         Iterator<LogEntry> it = logEntries.iterator();
+        int endIndex = Math.min(storedLogIndex, appliedIndex);
         while (it.hasNext()) {
-            if (it.next().logIndex < appliedIndex - 100) {
+            if (it.next().logIndex < endIndex - 100) {
                 it.remove();
             } else
                 break;

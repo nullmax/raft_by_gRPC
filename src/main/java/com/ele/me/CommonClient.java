@@ -162,10 +162,14 @@ public class CommonClient {
             final CountDownLatch finishLatch = new CountDownLatch(3);
             String command = "DELETE FROM simple";
             client.asyncCommandServer(command, finishLatch);
-            command = "INSERT INTO simple VALUES (1, 9)";
-            client.asyncCommandServer(command, finishLatch);
-            command = "INSERT INTO simple VALUES (2, 8)";
-            client.asyncCommandServer(command, finishLatch);
+            for (int i = 0; i < 3; ++i) {
+                command = "INSERT INTO simple VALUES (1, 9)";
+                client.asyncCommandServer(command, finishLatch);
+            }
+            for (int i = 0; i < 5; ++i) {
+                command = "INSERT INTO simple VALUES (2, 8)";
+                client.asyncCommandServer(command, finishLatch);
+            }
             finishLatch.await();
         } finally {
             client.shutdown();
