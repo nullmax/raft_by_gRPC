@@ -1,22 +1,23 @@
 import com.ele.me.ClientThread;
 import com.ele.me.CommonClient;
 
-import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TransferQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-
 
 public class TestClient {
     private static final int N = 10;
     private static CommonClient[] clients = new CommonClient[N];
+    private static long summer1 = 0;
+    private static long summer2 = 0;
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < N; ++i)
             clients[i] = new CommonClient("localhost", 5502);
-
+        summer1 += multiTest();
         for (int i = 0; i < 20; ++i)
-            multiTest();
+            summer2 += multiTest();
+        summer1 += summer2;
+        System.out.println("Mean time1:" + summer1 / 21);
+        System.out.println("Mean time2:" + summer2 / 20);
     }
 
     public static long multiTest() throws Exception {

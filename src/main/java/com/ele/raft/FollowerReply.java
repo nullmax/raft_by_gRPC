@@ -24,7 +24,6 @@ public  final class FollowerReply extends
     matchIndex_ = 0;
     stepDown_ = false;
     suggestNextIndex_ = 0;
-    responseTocommandId_ = 0;
   }
 
   @java.lang.Override
@@ -75,11 +74,6 @@ public  final class FollowerReply extends
           case 40: {
 
             suggestNextIndex_ = input.readInt32();
-            break;
-          }
-          case 48: {
-
-            responseTocommandId_ = input.readInt32();
             break;
           }
         }
@@ -150,15 +144,6 @@ public  final class FollowerReply extends
     return suggestNextIndex_;
   }
 
-  public static final int RESPONSETOCOMMANDID_FIELD_NUMBER = 6;
-  private int responseTocommandId_;
-  /**
-   * <code>int32 responseTocommandId = 6;</code>
-   */
-  public int getResponseTocommandId() {
-    return responseTocommandId_;
-  }
-
   private byte memoizedIsInitialized = -1;
   public final boolean isInitialized() {
     byte isInitialized = memoizedIsInitialized;
@@ -185,9 +170,6 @@ public  final class FollowerReply extends
     }
     if (suggestNextIndex_ != 0) {
       output.writeInt32(5, suggestNextIndex_);
-    }
-    if (responseTocommandId_ != 0) {
-      output.writeInt32(6, responseTocommandId_);
     }
   }
 
@@ -216,10 +198,6 @@ public  final class FollowerReply extends
       size += com.google.protobuf.CodedOutputStream
         .computeInt32Size(5, suggestNextIndex_);
     }
-    if (responseTocommandId_ != 0) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeInt32Size(6, responseTocommandId_);
-    }
     memoizedSize = size;
     return size;
   }
@@ -246,8 +224,6 @@ public  final class FollowerReply extends
         == other.getStepDown());
     result = result && (getSuggestNextIndex()
         == other.getSuggestNextIndex());
-    result = result && (getResponseTocommandId()
-        == other.getResponseTocommandId());
     return result;
   }
 
@@ -270,8 +246,6 @@ public  final class FollowerReply extends
         getStepDown());
     hash = (37 * hash) + SUGGESTNEXTINDEX_FIELD_NUMBER;
     hash = (53 * hash) + getSuggestNextIndex();
-    hash = (37 * hash) + RESPONSETOCOMMANDID_FIELD_NUMBER;
-    hash = (53 * hash) + getResponseTocommandId();
     hash = (29 * hash) + unknownFields.hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -404,8 +378,6 @@ public  final class FollowerReply extends
 
       suggestNextIndex_ = 0;
 
-      responseTocommandId_ = 0;
-
       return this;
     }
 
@@ -433,7 +405,6 @@ public  final class FollowerReply extends
       result.matchIndex_ = matchIndex_;
       result.stepDown_ = stepDown_;
       result.suggestNextIndex_ = suggestNextIndex_;
-      result.responseTocommandId_ = responseTocommandId_;
       onBuilt();
       return result;
     }
@@ -489,9 +460,6 @@ public  final class FollowerReply extends
       }
       if (other.getSuggestNextIndex() != 0) {
         setSuggestNextIndex(other.getSuggestNextIndex());
-      }
-      if (other.getResponseTocommandId() != 0) {
-        setResponseTocommandId(other.getResponseTocommandId());
       }
       onChanged();
       return this;
@@ -645,32 +613,6 @@ public  final class FollowerReply extends
     public Builder clearSuggestNextIndex() {
       
       suggestNextIndex_ = 0;
-      onChanged();
-      return this;
-    }
-
-    private int responseTocommandId_ ;
-    /**
-     * <code>int32 responseTocommandId = 6;</code>
-     */
-    public int getResponseTocommandId() {
-      return responseTocommandId_;
-    }
-    /**
-     * <code>int32 responseTocommandId = 6;</code>
-     */
-    public Builder setResponseTocommandId(int value) {
-      
-      responseTocommandId_ = value;
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>int32 responseTocommandId = 6;</code>
-     */
-    public Builder clearResponseTocommandId() {
-      
-      responseTocommandId_ = 0;
       onChanged();
       return this;
     }

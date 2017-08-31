@@ -1,4 +1,3 @@
-import com.ele.me.CommonClient;
 import com.ele.me.RaftServer;
 
 import java.util.ArrayList;

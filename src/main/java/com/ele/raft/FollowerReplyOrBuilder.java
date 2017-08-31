@@ -31,9 +31,4 @@ public interface FollowerReplyOrBuilder extends
    * <code>int32 suggestNextIndex = 5;</code>
    */
   int getSuggestNextIndex();
-
-  /**
-   * <code>int32 responseTocommandId = 6;</code>
-   */
-  int getResponseTocommandId();
 }

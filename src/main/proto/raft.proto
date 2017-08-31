@@ -49,7 +49,6 @@ message FollowerReply {
     int32 matchIndex = 3;
     bool stepDown = 4;
     int32 suggestNextIndex = 5;
-    int32 responseTocommandId = 6;
 }
 
 // 日志

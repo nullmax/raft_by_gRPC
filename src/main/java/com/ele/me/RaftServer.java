@@ -12,6 +12,7 @@ import io.grpc.*;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,7 +51,7 @@ public class RaftServer {
     //所有Server上的固有状态
     private AtomicInteger currentTerm;
     private int votedFor;
-        private final Log logs;
+    private final Log logs;
     //所有Server上的变化状态
 
 //    int commitIndex;
@@ -103,6 +104,7 @@ public class RaftServer {
      * @param addressList 服务器地址列表
      * @param portList    服务器端口列表
      */
+
     public void setCommunicateList(ArrayList<String> addressList, ArrayList<Integer> portList) {
         this.addressList = addressList;
         this.portList = portList;
@@ -150,8 +152,7 @@ public class RaftServer {
             }
         }
         // todo 自己下台
-//        timer.schedule(new SelfStepDown(), 5000);   //5秒后自己下台
-
+//        timers[serverId].schedule(new SelfStepDown(), 5000);   //5秒后自己下台
     }
 
     private synchronized void resetTimeout() {
@@ -177,12 +178,11 @@ public class RaftServer {
         commitTask = new CommitTask();
         applyTask = new ApplyTask();
 
-        timers[serverId].schedule(commitTask,  1000, 1000);
+        timers[serverId].schedule(commitTask, 1000, 1000);
         timers[serverId].scheduleAtFixedRate(applyTask, 5, 5);
 
         server.start();
         startTimeout();     //开始进行投票倒计时
-
 
         logger.info("Server" + serverId + " started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -258,6 +258,8 @@ public class RaftServer {
         }
     }
 
+    // 没有按照原论文实现
+    @Deprecated
     private void setCommitIndex(int start, int end) {
         int commandId;
 //        System.out.println(start + ", " + end + ", " + logs.appliedIndex + ", " + logs.commitIndex + ", " + observerConcurrentHashMap.size());
@@ -277,6 +279,15 @@ public class RaftServer {
                 }
             }
         }
+    }
+
+    // 论文中的间接提交方式
+    private synchronized void setCommitIndex() {
+        int[] temp = Arrays.copyOf(matchIndex, matchIndex.length);
+        Arrays.sort(temp);
+        int majorMatchIndex = temp[matchIndex.length / 2];
+        if (majorMatchIndex > logs.commitIndex && logs.getLogByIndex(majorMatchIndex).term == currentTerm.get())
+            logs.commitIndex = majorMatchIndex;
     }
 
     private Entry logToEntry(LogEntry logEntry) {
@@ -317,7 +328,8 @@ public class RaftServer {
             //deal with reply
             if (status.compareAndSet(LEADER, LEADER)) {
                 if (response.getSuccess()) {
-                    setCommitIndex(logs.commitIndex, response.getMatchIndex());
+//                    setCommitIndex(logs.commitIndex, response.getMatchIndex());
+                    setCommitIndex();   // 间接提交方式
                     matchIndex[sid] = response.getMatchIndex();
                     nextIndex[sid] = response.getMatchIndex() + 1;
                 } else {
@@ -445,7 +457,6 @@ public class RaftServer {
                                 logs.addLogEntry(entry.getTerm(), entry.getCommand(), entry.getCommandId());
                             }
                             // 拷贝成功，回复Leader
-                            builder.setResponseTocommandId(logs.getLogByIndex(logs.getLastIndex()).commandId);
                             builder.setSuccess(true);
                             builder.setMatchIndex(logs.getLastIndex());
                             if (request.getLeaderCommit() > logs.commitIndex)
@@ -500,7 +511,6 @@ public class RaftServer {
                             }
 
                             // 拷贝成功，回复Leader
-                            builder.setResponseTocommandId(logs.getLogByIndex(logs.getLastIndex()).commandId);
                             builder.setSuccess(true);
                             builder.setMatchIndex(logs.getLastIndex());
                             if (request.getLeaderCommit() > logs.commitIndex)
@@ -539,7 +549,7 @@ public class RaftServer {
         }
     }
 
-    // todo 删除
+    @Deprecated
     private void displayNextIndex() {
         for (int i = 0; i < serverCount; ++i)
             System.out.print(nextIndex[i] + " ");

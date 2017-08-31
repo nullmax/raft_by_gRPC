@@ -55,17 +55,16 @@ public final class RaftProto {
       "\001\n\rLeaderRequest\022\014\n\004term\030\001 \001(\005\022\020\n\010leader" +
       "Id\030\002 \001(\005\022\024\n\014prevLogIndex\030\003 \001(\005\022\023\n\013prevLo" +
       "gTerm\030\004 \001(\005\022\034\n\007entries\030\005 \003(\0132\013.raft.Entr" +
-      "y\022\024\n\014leaderCommit\030\006 \001(\005\"\213\001\n\rFollowerRepl" +
-      "y\022\014\n\004term\030\001 \001(\005\022\017\n\007success\030\002 \001(\010\022\022\n\nmatc" +
-      "hIndex\030\003 \001(\005\022\020\n\010stepDown\030\004 \001(\010\022\030\n\020sugges",
-      "tNextIndex\030\005 \001(\005\022\033\n\023responseTocommandId\030" +
-      "\006 \001(\005\"H\n\005Entry\022\014\n\004term\030\001 \001(\005\022\r\n\005index\030\002 " +
-      "\001(\005\022\021\n\tcommandId\030\003 \001(\005\022\017\n\007command\030\004 \001(\t2" +
-      "}\n\tConsensus\0223\n\013RequestVote\022\021.raft.VoteR" +
-      "equest\032\017.raft.VoteReply\"\000\022;\n\rAppendEntri" +
-      "es\022\023.raft.LeaderRequest\032\023.raft.FollowerR" +
-      "eply\"\000B\"\n\014com.ele.raftB\tRaftProtoP\001\242\002\004RA" +
-      "FTb\006proto3"
+      "y\022\024\n\014leaderCommit\030\006 \001(\005\"n\n\rFollowerReply" +
+      "\022\014\n\004term\030\001 \001(\005\022\017\n\007success\030\002 \001(\010\022\022\n\nmatch" +
+      "Index\030\003 \001(\005\022\020\n\010stepDown\030\004 \001(\010\022\030\n\020suggest",
+      "NextIndex\030\005 \001(\005\"H\n\005Entry\022\014\n\004term\030\001 \001(\005\022\r" +
+      "\n\005index\030\002 \001(\005\022\021\n\tcommandId\030\003 \001(\005\022\017\n\007comm" +
+      "and\030\004 \001(\t2}\n\tConsensus\0223\n\013RequestVote\022\021." +
+      "raft.VoteRequest\032\017.raft.VoteReply\"\000\022;\n\rA" +
+      "ppendEntries\022\023.raft.LeaderRequest\032\023.raft" +
+      ".FollowerReply\"\000B\"\n\014com.ele.raftB\tRaftPr" +
+      "otoP\001\242\002\004RAFTb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -102,7 +101,7 @@ public final class RaftProto {
     internal_static_raft_FollowerReply_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_raft_FollowerReply_descriptor,
-        new java.lang.String[] { "Term", "Success", "MatchIndex", "StepDown", "SuggestNextIndex", "ResponseTocommandId", });
+        new java.lang.String[] { "Term", "Success", "MatchIndex", "StepDown", "SuggestNextIndex", });
     internal_static_raft_Entry_descriptor =
       getDescriptor().getMessageTypes().get(4);
     internal_static_raft_Entry_fieldAccessorTable = new
