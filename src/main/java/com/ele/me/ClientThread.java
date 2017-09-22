@@ -19,12 +19,10 @@ public class ClientThread extends Thread {
     @Override
     public void run() {
         String command;
-
-        for (int j = 0; j < 50; ++j) {
+        for (int j = 0; j < 5; ++j) {
             command = getCommand(index.getAndIncrement(), client.id);
 //            client.asyncCommandServer(command, finishLatch);
             client.commandServer(command);
-//            client.dbTest(command);
         }
         latch.countDown();
     }

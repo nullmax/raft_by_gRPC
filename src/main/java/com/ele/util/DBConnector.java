@@ -5,18 +5,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class DBConnector {
     private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-    private static final String DB_URL = "jdbc:mysql://localhost/test?useSSL=false";
 
+
+    private static final String DB_URL = "jdbc:mysql://localhost/test?useSSL=false";
     private static final String USER = "root";
     private static final String PASSWORD = "toor";
 
     private static Connection conn;
 
+    /**
+     * 获取数据库链接
+     *
+     * @return
+     */
     private static Connection getConn() {
         if (conn != null)
             return conn;
@@ -29,6 +33,12 @@ public class DBConnector {
         return conn;
     }
 
+    /**
+     * 将查询结果的每一列存储到map，并将所有列存入到一个List
+     *
+     * @param r JDBC的查询结果
+     * @return
+     */
     private static List<Map<String, Object>> resultSet2Obj(ResultSet r) {
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
         try {
@@ -49,6 +59,12 @@ public class DBConnector {
         return result;
     }
 
+    /**
+     * 执行数据库查询指令
+     *
+     * @param sql
+     * @return
+     */
     public static List<Map<String, Object>> get(String sql) {
         List<Map<String, Object>> results = null;
         ResultSet rs = null;
@@ -74,6 +90,12 @@ public class DBConnector {
         return results;
     }
 
+    /**
+     * 执行数据库update语句
+     *
+     * @param sql
+     * @return
+     */
     public static boolean update(String sql) {
         Connection conn = getConn();
         Statement stmt = null;
@@ -96,6 +118,9 @@ public class DBConnector {
         return true;
     }
 
+    /**
+     * 释放链接
+     */
     public static void releaseConn() {
         if (conn != null) {
             synchronized (conn) {
@@ -108,17 +133,4 @@ public class DBConnector {
             }
         }
     }
-
-    public static void main(String[] args) {
-        AtomicInteger atomicInteger = new AtomicInteger(7);
-        atomicInteger.incrementAndGet();
-        System.out.println(atomicInteger.intValue());
-//        String sql = "DELETE FROM simple";
-//        update(sql);
-//        sql = "INSERT INTO simple VALUES (1, 9)";
-//        update(sql);
-//        sql = "SELECT * FROM simple";
-//        get(sql);
-    }
-
 }

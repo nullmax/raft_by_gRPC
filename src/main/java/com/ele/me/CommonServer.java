@@ -49,7 +49,7 @@ public class CommonServer {
         serverBuilder.addService(new CommonServer.IOService());
         server = serverBuilder.build();
 
-        responseThread.start();
+//        responseThread.start();
         server.start();
 
         logger.info("Server started, listening on " + port);
@@ -79,35 +79,36 @@ public class CommonServer {
 
         private Collection<ResultUnit> queryResults;
 
-        @Override
-        public void command(ClientRequest request, StreamObserver<ServerReply> responseObserver) {
-            boolean syncFlag = false;
-            if (commandIdList.isEmpty())
-                syncFlag = true;
-
-            logger.info("receive: " + request.getCommand() + ", id:" + request.getCommandId());
-            commandIdList.add(request.getCommandId());
-            requestConcurrentHashMap.put(request.getCommandId(), request);
-            observerConcurrentHashMap.put(request.getCommandId(), responseObserver);
-
-            if (syncFlag) {
-                synchronized (responseThread) {
-                    responseThread.notify();
-                }
-            }
-        }
-
 //        @Override
-//        public void command(ClientRequest request,
-//                            StreamObserver<ServerReply> responseObserver) {
-//            ServerReply.Builder builder = ServerReply.newBuilder();
-//            builder.setSuccess(DBConnector.update(request.getCommand()));
-//            builder.setRedirect(false);
+//        public void command(ClientRequest request, StreamObserver<ServerReply> responseObserver) {
+//            boolean syncFlag = false;
+//            if (commandIdList.isEmpty())
+//                syncFlag = true;
 //
-//            ServerReply reply = builder.build();
-//            responseObserver.onNext(reply);
-//            responseObserver.onCompleted();
+//            logger.info("receive: " + request.getCommand() + ", id:" + request.getCommandId());
+//            commandIdList.add(request.getCommandId());
+//            requestConcurrentHashMap.put(request.getCommandId(), request);
+//            observerConcurrentHashMap.put(request.getCommandId(), responseObserver);
+//
+//            if (syncFlag) {
+//                synchronized (responseThread) {
+//                    responseThread.notify();
+//                }
+//            }
 //        }
+
+        @Override
+        public void command(ClientRequest request,
+                            StreamObserver<ServerReply> responseObserver) {
+            ServerReply.Builder builder = ServerReply.newBuilder();
+//            builder.setSuccess(DBConnector.update(request.getCommand()));
+            builder.setSuccess(true);
+            builder.setRedirect(false);
+
+            ServerReply reply = builder.build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+        }
 
         private void getQueryResult(String sql) {
             queryResults = new LinkedList<ResultUnit>();
