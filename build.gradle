@@ -2,7 +2,9 @@ group 'io.grpc.examples'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
+apply plugin: 'application'
 apply plugin: 'com.google.protobuf'
+apply plugin: 'org.springframework.boot'
 
 buildscript {
     repositories {
@@ -12,6 +14,7 @@ buildscript {
         // ASSUMES GRADLE 2.12 OR HIGHER. Use plugin version 0.7.5 with earlier
         // gradle versions
         classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.1'
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.6.RELEASE")
     }
 }
 
@@ -52,10 +55,29 @@ repositories {
     mavenCentral()
 }
 
+mainClassName = 'com.ele.me.RaftServer'
+jar {
+    baseName = 'RaftServer'
+    version = '0.2.3'
+}
+
+//mainClassName = 'TestClient'
+//jar {
+//    baseName = 'TestClient'
+//    version = '0.1.100'
+//}
+
+//mainClassName = 'com.ele.me.CommonServer'
+//jar {
+//    baseName = 'RpcServer'
+//    version = '0.1.0'
+//}
+
 dependencies {
     compile 'io.grpc:grpc-netty:1.4.0'
     compile 'io.grpc:grpc-protobuf:1.4.0'
     compile 'io.grpc:grpc-stub:1.4.0'
+    compile files('lib/mysql-connector-java-5.1.43-bin.jar')
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
